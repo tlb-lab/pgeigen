@@ -41,6 +41,7 @@ extern "C"
     double     ArrayxiManhattan(ArrayType *a1, ArrayType *a2);
     double     ArrayxiKulczynski(ArrayType *a1, ArrayType *a2);
     double     ArrayxiBrayCurtis(ArrayType *a1, ArrayType *a2);
+    double     ArrayxiOchiai(ArrayType *a1, ArrayType *a2);
     double     ArrayxiFuzCavSim(ArrayType *a1, ArrayType *a2);
     double     ArrayxiFuzCavSimGlobal(ArrayType *a1, ArrayType *a2);
 

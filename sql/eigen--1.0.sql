@@ -686,6 +686,14 @@ CREATE  FUNCTION arrayxi_kulcz(arrayxi, arrayxi)
 COMMENT ON FUNCTION arrayxi_kulcz(arrayxi, arrayxi) IS 'Returns the Kulczynski similarity between the arrays.';
 
 
+CREATE  FUNCTION arrayxi_ochiai(arrayxi, arrayxi)
+        RETURNS FLOAT
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION arrayxi_ochiai(arrayxi, arrayxi) IS 'Returns the Ochiai similarity between the arrays.';
+
+
 CREATE  FUNCTION arrayxi_bray_curtis(arrayxi, arrayxi)
         RETURNS FLOAT
         AS '$libdir/eigen'

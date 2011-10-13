@@ -291,7 +291,6 @@ Datum arrayxi_kulcz(PG_FUNCTION_ARGS)
     PG_RETURN_FLOAT8(ArrayxiKulczynski(a1,a2));
 }
 
-
 // RETURNS THE BRAY-CURTIS DISSIMILARITY
 PG_FUNCTION_INFO_V1(arrayxi_bray_curtis);
 Datum arrayxi_bray_curtis(PG_FUNCTION_ARGS)
@@ -300,6 +299,16 @@ Datum arrayxi_bray_curtis(PG_FUNCTION_ARGS)
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
     PG_RETURN_FLOAT8(ArrayxiBrayCurtis(a1,a2));
+}
+
+// RETURNS THE BRAY-CURTIS DISSIMILARITY
+PG_FUNCTION_INFO_V1(arrayxi_ochiai);
+Datum arrayxi_ochiai(PG_FUNCTION_ARGS)
+{
+    ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
+    ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
+
+    PG_RETURN_FLOAT8(ArrayxiOchiai(a1,a2));
 }
 
 // RETURNS THE INTERSECTION BETWEEN BOTH ARRAYS
