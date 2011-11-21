@@ -7,9 +7,6 @@
 PG_MODULE_MAGIC;
 #endif
 
-#define PG_GETARG_VECTOR3D(n)  ((pgvector3d *) PG_GETARG_POINTER(n))
-#define PG_RETURN_VECTOR3D(x)  return pgvector3dGetDatum(x)
-
 // FUNCTION TO READ-IN A VECTOR3D
 PG_FUNCTION_INFO_V1(vector3d_in);
 Datum vector3d_in(PG_FUNCTION_ARGS)
@@ -141,6 +138,20 @@ Datum vector3d_ne(PG_FUNCTION_ARGS)
     pgvector3d    *v = PG_GETARG_VECTOR3D(1);
 
     PG_RETURN_BOOL(vector3DCmp(u,v) != 0);
+}
+
+//
+PG_FUNCTION_INFO_V1(vector3d_union);
+Datum vector3d_union(PG_FUNCTION_ARGS)
+{
+    pgvector3d *v1 = PG_GETARG_VECTOR3D(0);
+    pgvector3d *v2 = PG_GETARG_VECTOR3D(1);
+
+    pgvector3d *v3 = (pgvector3d *) palloc(sizeof(pgvector3d));
+
+    vector3DUnion(v1,v2,v3);
+
+    PG_RETURN_POINTER(v3);
 }
 
 // VECTOR ADDITION

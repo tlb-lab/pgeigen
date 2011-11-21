@@ -286,85 +286,8 @@ ArrayType *ArrayxiUnion(ArrayType *a1, ArrayType *a2)
     return arrayxi_to_arraytype(arrayxi1.max(arrayxi2), size);
 }
 
-/* DISTANCE METRICS */
 
-// RETURNS THE MANHATTAN DISTANCE BETWEEN BOTH ARRAYS
-extern "C"
-double ArrayxiManhattan(ArrayType *a1, ArrayType *a2)
-{
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
-    // MAP DATA TO EIGEN ARRAYS
-    Eigen::Map<Eigen::ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Eigen::Map<Eigen::ArrayXi> arrayxi2(ARRINTDATA(a2), size);
-
-    return (arrayxi1-arrayxi2).abs().sum();
-}
-
-// RETURNS THE EUCLIDEAN DISTANCE BETWEEN BOTH ARRAYS
-extern "C"
-double ArrayxiEuclidean(ArrayType *a1, ArrayType *a2)
-{
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
-    // MAP DATA TO EIGEN ARRAYS
-    Eigen::Map<Eigen::ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Eigen::Map<Eigen::ArrayXi> arrayxi2(ARRINTDATA(a2), size);
-
-    return sqrt((arrayxi1-arrayxi2).square().sum());
-}
-
-// RETURNS THE OCHIAI SIMILARITY
-extern "C"
-double ArrayxiOchiai(ArrayType *a1, ArrayType *a2)
-{
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
-    // MAP DATA TO EIGEN ARRAYS
-    Eigen::Map<Eigen::ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Eigen::Map<Eigen::ArrayXi> arrayxi2(ARRINTDATA(a2), size);
-
-    // UNIQUE COUNTS OF THE ARRAYS
-    unsigned int a = (arrayxi1!=arrayxi2).select(arrayxi1, 0).count();
-    unsigned int b = (arrayxi1!=arrayxi2).select(arrayxi2, 0).count();
-
-    // COMMON COUNTS
-    unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
-
-    return c / sqrt((a+c)*(b+c));
-}
-
-// RETURNS THE KULCZYNSKI SIMILARITY
-extern "C"
-double ArrayxiKulczynski(ArrayType *a1, ArrayType *a2)
-{
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
-    // MAP DATA TO EIGEN ARRAYS
-    Eigen::Map<Eigen::ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Eigen::Map<Eigen::ArrayXi> arrayxi2(ARRINTDATA(a2), size);
-
-    // UNIQUE COUNTS OF THE ARRAYS
-    double a = (arrayxi1!=arrayxi2).select(arrayxi1, 0).count();
-    double b = (arrayxi1!=arrayxi2).select(arrayxi2, 0).count();
-
-    // COMMON COUNTS
-    unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
-
-    return 0.5 * (c/(a+c) + c/(b+c));
-}
+///////////////////////NORMALIZED SIMILARITY METRICS////////////////////////////
 
 
 // RETURNS THE BRAY-CURTIS DISSIMILARITY
@@ -380,13 +303,12 @@ double ArrayxiBrayCurtis(ArrayType *a1, ArrayType *a2)
     Eigen::Map<Eigen::ArrayXi> arrayxi1(ARRINTDATA(a1), size);
     Eigen::Map<Eigen::ArrayXi> arrayxi2(ARRINTDATA(a2), size);
 
-    return 1.0 - ((arrayxi1-arrayxi2).abs().sum() / (arrayxi1+arrayxi2).sum());
+    return 1.0 - ((arrayxi1-arrayxi2).abs().sum() / (float) (arrayxi1+arrayxi2).sum());
 }
 
-
-// RETURNS THE FUZCAV SIMILARITY
+// RETURNS THE DICE SIMILARITY
 extern "C"
-double ArrayxiFuzCavSim(ArrayType *a1, ArrayType *a2)
+double ArrayxiDice(ArrayType *a1, ArrayType *a2)
 {
     // GET NUMBER OF ELEMENTS IN FIRST ARRAY
     int size = ARRNELEMS(a1);
@@ -397,11 +319,209 @@ double ArrayxiFuzCavSim(ArrayType *a1, ArrayType *a2)
     Eigen::Map<Eigen::ArrayXi> arrayxi1(ARRINTDATA(a1), size);
     Eigen::Map<Eigen::ArrayXi> arrayxi2(ARRINTDATA(a2), size);
 
-    // COUNTS THAT ARE SHARED BETWEEN THE FUZCAV FINGERPRINTS
-    double common_counts = INTERSECT_SIZE(arrayxi1,arrayxi2);
-
-    return (common_counts / std::min(arrayxi1.count(), arrayxi2.count()));
+    // COMMON COUNTS
+    unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
+    
+    return 2 * c / (float) size;
 }
+
+// RETURNS THE KULCZYNSKI SIMILARITY
+extern "C"
+double ArrayxiKulczynski(ArrayType *a1, ArrayType *a2)
+{
+    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
+    int size = ARRNELEMS(a1);
+
+    ARREQSIZE(size, ARRNELEMS(a2));
+
+    // MAP DATA TO EIGEN ARRAYS
+    Eigen::Map<Eigen::ArrayXi> arrayxi1(ARRINTDATA(a1), size);
+    Eigen::Map<Eigen::ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+
+    // SET COUNTS ON THE INDIVIDUAL ARRAYS
+    unsigned int A = arrayxi1.count();
+    unsigned int B = arrayxi2.count();
+    
+    // COMMON COUNTS
+    unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
+    
+    return c * (A + B) / (float) (2 * A * B);
+}
+
+// RETURNS THE NORMALIZED EUCLIDEAN SIMILARITY
+extern "C"
+double ArrayxiNormEuclidean(ArrayType *a1, ArrayType *a2)
+{
+    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
+    int size = ARRNELEMS(a1);
+
+    ARREQSIZE(size, ARRNELEMS(a2));
+
+    // MAP DATA TO EIGEN ARRAYS
+    Eigen::Map<Eigen::ArrayXi> arrayxi1(ARRINTDATA(a1), size);
+    Eigen::Map<Eigen::ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+
+    // SET COUNTS ON THE INDIVIDUAL ARRAYS
+    unsigned int A = arrayxi1.count();
+    unsigned int B = arrayxi2.count();
+    
+    // COMMON COUNTS
+    unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
+
+    return sqrt((A + B - 2 * c) / (float) size);
+}
+
+// RETURNS THE NORMALIZED MANHATTAN SIMILARITY
+extern "C"
+double ArrayxiNormManhattan(ArrayType *a1, ArrayType *a2)
+{
+    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
+    int size = ARRNELEMS(a1);
+
+    ARREQSIZE(size, ARRNELEMS(a2));
+
+    // MAP DATA TO EIGEN ARRAYS
+    Eigen::Map<Eigen::ArrayXi> arrayxi1(ARRINTDATA(a1), size);
+    Eigen::Map<Eigen::ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+
+    // SET COUNTS ON THE INDIVIDUAL ARRAYS
+    unsigned int A = arrayxi1.count();
+    unsigned int B = arrayxi2.count();
+    
+    // COMMON COUNTS
+    unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
+
+    return (A + B - 2 * c) / (float) size;
+}
+
+// RETURNS THE OCHIAI/COSINE SIMILARITY
+extern "C"
+double ArrayxiOchiai(ArrayType *a1, ArrayType *a2)
+{
+    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
+    int size = ARRNELEMS(a1);
+
+    ARREQSIZE(size, ARRNELEMS(a2));
+
+    // MAP DATA TO EIGEN ARRAYS
+    Eigen::Map<Eigen::ArrayXi> arrayxi1(ARRINTDATA(a1), size);
+    Eigen::Map<Eigen::ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+
+    // SET COUNTS ON THE INDIVIDUAL ARRAYS
+    unsigned int A = arrayxi1.count();
+    unsigned int B = arrayxi2.count();
+    
+    // COMMON COUNTS
+    unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
+
+    return c / sqrt(A*B);
+}
+
+// RETURNS THE RUSSELL-RAO SIMILARITY
+extern "C"
+double ArrayxiRussellRao(ArrayType *a1, ArrayType *a2)
+{
+    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
+    int size = ARRNELEMS(a1);
+
+    ARREQSIZE(size, ARRNELEMS(a2));
+
+    // MAP DATA TO EIGEN ARRAYS
+    Eigen::Map<Eigen::ArrayXi> arrayxi1(ARRINTDATA(a1), size);
+    Eigen::Map<Eigen::ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    
+    // COMMON COUNTS
+    unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
+
+    return c / (float) size;
+}
+
+// RETURNS THE SIMPSON SIMILARITY - FUZCAV DEFAULT SIMILARITY
+extern "C"
+double ArrayxiSimpson(ArrayType *a1, ArrayType *a2)
+{
+    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
+    int size = ARRNELEMS(a1);
+
+    ARREQSIZE(size, ARRNELEMS(a2));
+
+    // MAP DATA TO EIGEN ARRAYS
+    Eigen::Map<Eigen::ArrayXi> arrayxi1(ARRINTDATA(a1), size);
+    Eigen::Map<Eigen::ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+
+    // SET COUNTS ON THE INDIVIDUAL ARRAYS
+    unsigned int A = arrayxi1.count();
+    unsigned int B = arrayxi2.count();
+    
+    // COMMON COUNTS
+    unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
+
+    return c / (float) std::min(A,B);
+}
+
+// RETURNS THE TVERSKY SIMILARITY
+extern "C"
+double ArrayxiTversky(ArrayType *a1, ArrayType *a2)
+{
+    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
+    int size = ARRNELEMS(a1);
+
+    ARREQSIZE(size, ARRNELEMS(a2));
+
+    // MAP DATA TO EIGEN ARRAYS
+    Eigen::Map<Eigen::ArrayXi> arrayxi1(ARRINTDATA(a1), size);
+    Eigen::Map<Eigen::ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+
+    // SET COUNTS ON THE INDIVIDUAL ARRAYS
+    unsigned int A = arrayxi1.count();
+    unsigned int B = arrayxi2.count();
+    
+    // COMMON COUNTS
+    unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
+
+    return c / (float) arrayxi_tversky_alpha * A + arrayxi_tversky_beta * B + (1 - arrayxi_tversky_alpha + arrayxi_tversky_beta) * c;
+}
+
+//////////////////////////NORMAL DISTANCE METRICS///////////////////////////////
+
+
+// RETURNS THE EUCLIDEAN DISTANCE BETWEEN BOTH ARRAYS
+extern "C"
+double ArrayxiEuclideanDist(ArrayType *a1, ArrayType *a2)
+{
+    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
+    int size = ARRNELEMS(a1);
+
+    ARREQSIZE(size, ARRNELEMS(a2));
+
+    // MAP DATA TO EIGEN ARRAYS
+    Eigen::Map<Eigen::ArrayXi> arrayxi1(ARRINTDATA(a1), size);
+    Eigen::Map<Eigen::ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+
+    return sqrt((arrayxi1-arrayxi2).square().sum());
+}
+
+// RETURNS THE MANHATTAN DISTANCE BETWEEN BOTH ARRAYS
+extern "C"
+double ArrayxiManhattanDist(ArrayType *a1, ArrayType *a2)
+{
+    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
+    int size = ARRNELEMS(a1);
+
+    ARREQSIZE(size, ARRNELEMS(a2));
+
+    // MAP DATA TO EIGEN ARRAYS
+    Eigen::Map<Eigen::ArrayXi> arrayxi1(ARRINTDATA(a1), size);
+    Eigen::Map<Eigen::ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+
+    return (arrayxi1-arrayxi2).abs().sum();
+}
+
+
+/////////////////////FUZCAV-SPECIFIC SIMILARITY METRICS/////////////////////////
+
+
+
 
 // RETURNS THE FUZCAV SIMILARITY
 extern "C"

@@ -1,5 +1,6 @@
 #include "arrayxi.h"
 #include "fmgr.h"
+#include <utils/builtins.h>
 
 bool array_contains_nulls(ArrayType *array)
 {
@@ -258,27 +259,27 @@ Datum arrayxi_union(PG_FUNCTION_ARGS)
 }
 
 
-/* DISTANCE AND SIMILARITY METRICS */
+///////////////////////NORMALIZED SIMILARITY METRICS////////////////////////////
 
 
-// RETURNS THE INTERSECTION BETWEEN BOTH ARRAYS
-PG_FUNCTION_INFO_V1(arrayxi_euclidean);
-Datum arrayxi_euclidean(PG_FUNCTION_ARGS)
+// RETURNS THE BRAY-CURTIS DISSIMILARITY
+PG_FUNCTION_INFO_V1(arrayxi_bray_curtis);
+Datum arrayxi_bray_curtis(PG_FUNCTION_ARGS)
 {
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_FLOAT8(ArrayxiEuclidean(a1,a2));
+    PG_RETURN_FLOAT8(ArrayxiBrayCurtis(a1,a2));
 }
 
-// RETURNS THE INTERSECTION BETWEEN BOTH ARRAYS
-PG_FUNCTION_INFO_V1(arrayxi_manhattan);
-Datum arrayxi_manhattan(PG_FUNCTION_ARGS)
+// RETURNS THE BRAY-CURTIS DISSIMILARITY
+PG_FUNCTION_INFO_V1(arrayxi_dice);
+Datum arrayxi_dice(PG_FUNCTION_ARGS)
 {
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_FLOAT8(ArrayxiManhattan(a1,a2));
+    PG_RETURN_FLOAT8(ArrayxiKulczynski(a1,a2));
 }
 
 // RETURNS THE BRAY-CURTIS DISSIMILARITY
@@ -292,16 +293,6 @@ Datum arrayxi_kulcz(PG_FUNCTION_ARGS)
 }
 
 // RETURNS THE BRAY-CURTIS DISSIMILARITY
-PG_FUNCTION_INFO_V1(arrayxi_bray_curtis);
-Datum arrayxi_bray_curtis(PG_FUNCTION_ARGS)
-{
-    ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
-    ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
-
-    PG_RETURN_FLOAT8(ArrayxiBrayCurtis(a1,a2));
-}
-
-// RETURNS THE BRAY-CURTIS DISSIMILARITY
 PG_FUNCTION_INFO_V1(arrayxi_ochiai);
 Datum arrayxi_ochiai(PG_FUNCTION_ARGS)
 {
@@ -312,13 +303,56 @@ Datum arrayxi_ochiai(PG_FUNCTION_ARGS)
 }
 
 // RETURNS THE INTERSECTION BETWEEN BOTH ARRAYS
-PG_FUNCTION_INFO_V1(arrayxi_fuzcavsim);
-Datum arrayxi_fuzcavsim(PG_FUNCTION_ARGS)
+PG_FUNCTION_INFO_V1(arrayxi_russell_rao);
+Datum arrayxi_russell_rao(PG_FUNCTION_ARGS)
 {
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_FLOAT8(ArrayxiFuzCavSim(a1,a2));
+    PG_RETURN_FLOAT8(ArrayxiRussellRao(a1,a2));
+}
+
+// RETURNS THE INTERSECTION BETWEEN BOTH ARRAYS
+PG_FUNCTION_INFO_V1(arrayxi_simpson);
+Datum arrayxi_simpson(PG_FUNCTION_ARGS)
+{
+    ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
+    ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
+
+    PG_RETURN_FLOAT8(ArrayxiSimpson(a1,a2));
+}
+
+// RETURNS THE INTERSECTION BETWEEN BOTH ARRAYS
+PG_FUNCTION_INFO_V1(arrayxi_tversky);
+Datum arrayxi_tversky(PG_FUNCTION_ARGS)
+{
+    ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
+    ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
+
+    PG_RETURN_FLOAT8(ArrayxiTversky(a1,a2));
+}
+
+//////////////////////////NORMAL DISTANCE METRICS///////////////////////////////
+
+
+// RETURNS THE INTERSECTION BETWEEN BOTH ARRAYS
+PG_FUNCTION_INFO_V1(arrayxi_euclidean_dist);
+Datum arrayxi_euclidean_dist(PG_FUNCTION_ARGS)
+{
+    ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
+    ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
+
+    PG_RETURN_FLOAT8(ArrayxiEuclideanDist(a1,a2));
+}
+
+// RETURNS THE INTERSECTION BETWEEN BOTH ARRAYS
+PG_FUNCTION_INFO_V1(arrayxi_manhattan_dist);
+Datum arrayxi_manhattan_dist(PG_FUNCTION_ARGS)
+{
+    ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
+    ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
+
+    PG_RETURN_FLOAT8(ArrayxiManhattanDist(a1,a2));
 }
 
 // RETURNS THE INTERSECTION BETWEEN BOTH ARRAYS
@@ -330,3 +364,60 @@ Datum arrayxi_fuzcavsim_global(PG_FUNCTION_ARGS)
 
     PG_RETURN_FLOAT8(ArrayxiFuzCavSimGlobal(a1,a2));
 }
+
+///////////////////DEFAULT METRIC CUTOFF GETTERS & SETTERS//////////////////////
+
+
+// DEFAULT LIMITS (USED FOR GIST FUNCTIONS)
+float4 arrayxi_tversky_alpha   = 1.0f;
+float4 arrayxi_tversky_beta    = 1.0f;
+
+// RETURNS THE CURRENT LIMIT FOR THE SPECIFIED METRIC
+PG_FUNCTION_INFO_V1(show_arrayxi_similarity_limit);
+Datum show_arrayxi_similarity_limit(PG_FUNCTION_ARGS)
+{
+    char  *metric = PG_GETARG_TEXT_AS_CSTRING(0);
+    float4  limit;
+    
+    if (strcmp(metric, "tversky_alpha") == 0) limit = arrayxi_tversky_alpha;
+    else if (strcmp(metric, "tversky_beta") == 0) limit = arrayxi_tversky_beta;
+    
+    else
+    {
+        ereport(ERROR,
+                    (errcode(ERRCODE_DATA_EXCEPTION),
+                     errmsg("unknown similarity metric or parameter: \"%s\"", metric))
+                );
+    }
+        
+    PG_RETURN_FLOAT4(limit);
+}
+
+// SETS THE LIMIT FOR THE SPECIFIED METRIC
+PG_FUNCTION_INFO_V1(set_arrayxi_similarity_limit);
+Datum set_arrayxi_similarity_limit(PG_FUNCTION_ARGS)
+{
+    float4  limit  = PG_GETARG_FLOAT4(0);
+    char   *metric = PG_GETARG_TEXT_AS_CSTRING(1);
+ 
+    if (limit < 0 || limit > 1.0) 
+    {
+        ereport(ERROR,
+                    (errcode(ERRCODE_DATA_EXCEPTION),
+                     errmsg("invalid limit %f for parameter \"%s\": value has to be in the range [0.0 1.0].",
+                            limit, metric)));
+    }
+    
+    if (strcmp(metric, "tversky_alpha") == 0) arrayxi_tversky_alpha = limit;
+    else if (strcmp(metric, "tversky_beta") == 0) arrayxi_tversky_beta = limit;
+    
+    else
+    {
+        ereport(ERROR,
+                    (errcode(ERRCODE_DATA_EXCEPTION),
+                     errmsg("unkknown similarity metric: \"%s\"", metric))
+                );
+    }
+    
+    PG_RETURN_FLOAT4(limit);
+ }

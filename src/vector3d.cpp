@@ -27,6 +27,19 @@ int vector3DCmp(pgvector3d *u, pgvector3d *v)
     return 1;
 }
 
+// CREATE THE UNION OF TWO VECTORS (REQUIRED FOR GIST INDEX)
+void vector3DUnion(pgvector3d *u, pgvector3d *v, pgvector3d *t)
+{
+    Vector3d au(u->x, u->y, u->z);
+    Vector3d av(v->x, v->y, v->z);
+    
+    // GET AVERAGE COORDINATES
+    Vector3d at = (au + av) / 2;
+    
+    // COPY TO POSTGRES VECTOR3D STRUCT
+    vector3DCopy(at,t);
+}
+
 void vector3DAdd(pgvector3d *u, pgvector3d *v, pgvector3d *t)
 {
     Vector3d au(u->x, u->y, u->z);
