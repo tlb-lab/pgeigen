@@ -7,6 +7,11 @@ extern "C"
     #include "utils/array.h"
     #include "catalog/pg_type.h"
 
+    #define PG_GETARG_TEXT_AS_CSTRING(x)    (text_to_cstring(PG_GETARG_TEXT_PP(x)))
+
+    extern float4 arrayxi_tversky_alpha;
+    extern float4 arrayxi_tversky_beta;
+    
     // ARRAY PROPERTIES
     int        ArrayxiSize(ArrayType *array);
     int        ArrayxiNonZeros(ArrayType *array);
@@ -36,14 +41,24 @@ extern "C"
     ArrayType *ArrayxiIntersection(ArrayType *a1, ArrayType *a2);
     ArrayType *ArrayxiUnion(ArrayType *a1, ArrayType *a2);
 
-    // DISTANCE METRICS
-    double     ArrayxiEuclidean(ArrayType *a1, ArrayType *a2);
-    double     ArrayxiManhattan(ArrayType *a1, ArrayType *a2);
-    double     ArrayxiKulczynski(ArrayType *a1, ArrayType *a2);
+    // NORMALIZED SIMILARITY METRICS
     double     ArrayxiBrayCurtis(ArrayType *a1, ArrayType *a2);
+    double     ArrayxiDice(ArrayType *a1, ArrayType *a2);
+    double     ArrayxiKulczynski(ArrayType *a1, ArrayType *a2);
+    double     ArrayxiNormEuclidean(ArrayType *a1, ArrayType *a2);
+    double     ArrayxiNormManhattan(ArrayType *a1, ArrayType *a2);
     double     ArrayxiOchiai(ArrayType *a1, ArrayType *a2);
-    double     ArrayxiFuzCavSim(ArrayType *a1, ArrayType *a2);
+    double     ArrayxiRussellRao(ArrayType *a1, ArrayType *a2);
+    double     ArrayxiSimpson(ArrayType *a1, ArrayType *a2);
+    double     ArrayxiTversky(ArrayType *a1, ArrayType *a2);
+    
+    // FUZCAV METRIC
     double     ArrayxiFuzCavSimGlobal(ArrayType *a1, ArrayType *a2);
+    
+    // DISTANCE METRICS
+    double     ArrayxiEuclideanDist(ArrayType *a1, ArrayType *a2);
+    double     ArrayxiManhattanDist(ArrayType *a1, ArrayType *a2);
+    
 
 #ifdef __cplusplus
 }
