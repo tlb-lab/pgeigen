@@ -1,5 +1,5 @@
 # LINK NECESSARY LIBRARIES AND HEADER FILES
-PG_CPPFLAGS += -I/usr/local/include/Eigen
+PG_CPPFLAGS += -I${EIGEN}
 
 MODULE_big  = eigen
 EXTENSION   = eigen
