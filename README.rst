@@ -13,7 +13,7 @@ Software requirements
 ~~~~~~~~~~~~~~~~~~~~~
 **pgeigen** requires PostgreSQL 9.1+ including development header files (normally 
 postgresql-server-dev package or similar) as well as the Eigen header files in
-version 3+. The :envvar:`$EIGEN` environment variable has to be set to the path
+version 3+. The ``$EIGEN`` environment variable has to be set to the path
 that contains the Eigen header files, e.g. /usr/local/include/Eigen.
 
 Obtaining the source code
@@ -35,7 +35,7 @@ This will build and install the shared library in the PostgreSQL server library
 directory. The extension can then be installed in the server by executing the following
 commands in PostgreSQL (e.g. psql or GUI tool)::
 
-    $ CREATE EXTENSION pgeigen;
+    $ CREATE EXTENSION eigen;
 
 Documentation
 -------------
