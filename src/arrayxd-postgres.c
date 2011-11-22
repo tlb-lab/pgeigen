@@ -11,7 +11,7 @@ Datum arrayxd_size(PG_FUNCTION_ARGS)
 {
     ArrayType  *array = PG_GETARG_ARRAYTYPE_P(0);
 
-    PG_RETURN_INT32(ArrayxdSize(array));
+    PG_RETURN_INT32(ArrayXdSize(array));
 }
 
 // RETURNS THE NUMBER OF NON-ZERO ELEMENTS IN THE ARRAY
@@ -20,7 +20,7 @@ Datum arrayxd_nonzeros(PG_FUNCTION_ARGS)
 {
     ArrayType  *array = PG_GETARG_ARRAYTYPE_P(0);
 
-    PG_RETURN_INT32(ArrayxdNonZeros(array));
+    PG_RETURN_INT32(ArrayXdNonZeros(array));
 }
 
 // RETURNS SMALLEST COEFFICIENT IN ARRAY
@@ -29,7 +29,7 @@ Datum arrayxd_min(PG_FUNCTION_ARGS)
 {
     ArrayType  *array = PG_GETARG_ARRAYTYPE_P(0);
 
-    PG_RETURN_FLOAT8(ArrayxdMinCoeff(array));
+    PG_RETURN_FLOAT8(ArrayXdMinCoeff(array));
 }
 
 // RETURNS LARGEST COEFFICIENT IN ARRAY
@@ -38,7 +38,7 @@ Datum arrayxd_max(PG_FUNCTION_ARGS)
 {
     ArrayType  *array = PG_GETARG_ARRAYTYPE_P(0);
 
-    PG_RETURN_FLOAT8(ArrayxdMaxCoeff(array));
+    PG_RETURN_FLOAT8(ArrayXdMaxCoeff(array));
 }
 
 // SUMS ARRAY
@@ -47,7 +47,7 @@ Datum arrayxd_sum(PG_FUNCTION_ARGS)
 {
     ArrayType  *array = PG_GETARG_ARRAYTYPE_P(0);
 
-    PG_RETURN_FLOAT8(ArrayxdSum(array));
+    PG_RETURN_FLOAT8(ArrayXdSum(array));
 }
 
 // SUMS ARRAY
@@ -56,7 +56,7 @@ Datum arrayxd_mean(PG_FUNCTION_ARGS)
 {
     ArrayType  *array = PG_GETARG_ARRAYTYPE_P(0);
 
-    PG_RETURN_FLOAT8(ArrayxdMean(array));
+    PG_RETURN_FLOAT8(ArrayXdMean(array));
 }
 
 PG_FUNCTION_INFO_V1(arrayxd_abs);
@@ -64,7 +64,7 @@ Datum arrayxd_abs(PG_FUNCTION_ARGS)
 {
     ArrayType  *array = PG_GETARG_ARRAYTYPE_P(0);
 
-    PG_RETURN_ARRAYTYPE_P(ArrayxdAbs(array));
+    PG_RETURN_ARRAYTYPE_P(ArrayXdAbs(array));
 }
 
 /*
@@ -77,7 +77,7 @@ Datum arrayxd_add(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_ARRAYTYPE_P(ArrayxdAdd(a1,a2));
+    PG_RETURN_ARRAYTYPE_P(ArrayXdAdd(a1,a2));
 }
 
 PG_FUNCTION_INFO_V1(arrayxd_sub);
@@ -86,7 +86,7 @@ Datum arrayxd_sub(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_ARRAYTYPE_P(ArrayxdSub(a1,a2));
+    PG_RETURN_ARRAYTYPE_P(ArrayXdSub(a1,a2));
 }
 
 PG_FUNCTION_INFO_V1(arrayxd_mul);
@@ -95,7 +95,7 @@ Datum arrayxd_mul(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_ARRAYTYPE_P(ArrayxdMul(a1,a2));
+    PG_RETURN_ARRAYTYPE_P(ArrayXdMul(a1,a2));
 }
 
 PG_FUNCTION_INFO_V1(arrayxd_div);
@@ -104,7 +104,7 @@ Datum arrayxd_div(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_ARRAYTYPE_P(ArrayxdDiv(a1,a2));
+    PG_RETURN_ARRAYTYPE_P(ArrayXdDiv(a1,a2));
 }
 
 /* ARRAY SCALAR ARITHMETIC FUNCTIONS */
@@ -116,7 +116,7 @@ Datum arrayxd_add_scalar(PG_FUNCTION_ARGS)
     ArrayType *array = PG_GETARG_ARRAYTYPE_P(0);
     int        scalar = PG_GETARG_INT32(1);
 
-    PG_RETURN_ARRAYTYPE_P(ArrayxdAddScalar(array,scalar));
+    PG_RETURN_ARRAYTYPE_P(ArrayXdAddScalar(array,scalar));
 }
 
 //
@@ -126,7 +126,7 @@ Datum arrayxd_sub_scalar(PG_FUNCTION_ARGS)
     ArrayType *array = PG_GETARG_ARRAYTYPE_P(0);
     int        scalar = PG_GETARG_INT32(1);
 
-    PG_RETURN_ARRAYTYPE_P(ArrayxdSubScalar(array,scalar));
+    PG_RETURN_ARRAYTYPE_P(ArrayXdSubScalar(array,scalar));
 }
 
 //
@@ -136,7 +136,7 @@ Datum arrayxd_mul_scalar(PG_FUNCTION_ARGS)
     ArrayType *array = PG_GETARG_ARRAYTYPE_P(0);
     int        scalar = PG_GETARG_INT32(1);
 
-    PG_RETURN_ARRAYTYPE_P(ArrayxdMulScalar(array,scalar));
+    PG_RETURN_ARRAYTYPE_P(ArrayXdMulScalar(array,scalar));
 }
 
 
@@ -150,7 +150,7 @@ Datum arrayxd_euclidean(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_FLOAT8(ArrayxdEuclidean(a1,a2));
+    PG_RETURN_FLOAT8(ArrayXdEuclidean(a1,a2));
 }
 
 // RETURNS THE INTERSECTION BETWEEN BOTH ARRAYS
@@ -160,7 +160,7 @@ Datum arrayxd_manhattan(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_FLOAT8(ArrayxdManhattan(a1,a2));
+    PG_RETURN_FLOAT8(ArrayXdManhattan(a1,a2));
 }
 
 //
@@ -170,10 +170,10 @@ Datum arrayxd_usrsim(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_FLOAT8(ArrayxdUSRSim(a1,a2));
+    PG_RETURN_FLOAT8(ArrayXdUSRSim(a1,a2));
 }
 
-// 
+//
 PG_FUNCTION_INFO_V1(arrayxd_usrcatsim);
 Datum arrayxd_usrcatsim(PG_FUNCTION_ARGS)
 {
@@ -184,6 +184,6 @@ Datum arrayxd_usrcatsim(PG_FUNCTION_ARGS)
     float      rw = PG_GETARG_FLOAT4(4);
     float      aw = PG_GETARG_FLOAT4(5);
     float      dw = PG_GETARG_FLOAT4(6);
-    
-    PG_RETURN_FLOAT8(ArrayxdUSRCatSim(a1,a2,ow,hw,rw,aw,dw));
+
+    PG_RETURN_FLOAT8(ArrayXdUSRCatSim(a1,a2,ow,hw,rw,aw,dw));
 }

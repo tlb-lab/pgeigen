@@ -8,33 +8,33 @@ extern "C"
     #include "catalog/pg_type.h"
 
     // ARRAY PROPERTIES
-    int        ArrayxdSize(ArrayType *array);
-    int        ArrayxdNonZeros(ArrayType *array);
-    double     ArrayxdMinCoeff(ArrayType *array);
-    double     ArrayxdMinCoeff(ArrayType *array);
-    double     ArrayxdSum(ArrayType *array);
-    double     ArrayxdMean(ArrayType *array);
-    ArrayType *ArrayxdAbs(ArrayType *array);
+    int        ArrayXdSize(ArrayType *array);
+    int        ArrayXdNonZeros(ArrayType *array);
+    double     ArrayXdMinCoeff(ArrayType *array);
+    double     ArrayXdMinCoeff(ArrayType *array);
+    double     ArrayXdSum(ArrayType *array);
+    double     ArrayXdMean(ArrayType *array);
+    ArrayType *ArrayXdAbs(ArrayType *array);
 
     // ARRAY ARITHMETIC
-    ArrayType *ArrayxdAdd(ArrayType *a1, ArrayType *a2);
-    ArrayType *ArrayxdSub(ArrayType *a1, ArrayType *a2);
-    ArrayType *ArrayxdMul(ArrayType *a1, ArrayType *a2);
-    ArrayType *ArrayxdDiv(ArrayType *a1, ArrayType *a2);
+    ArrayType *ArrayXdAdd(ArrayType *a1, ArrayType *a2);
+    ArrayType *ArrayXdSub(ArrayType *a1, ArrayType *a2);
+    ArrayType *ArrayXdMul(ArrayType *a1, ArrayType *a2);
+    ArrayType *ArrayXdDiv(ArrayType *a1, ArrayType *a2);
 
-    ArrayType *ArrayxdAddScalar(ArrayType *array, int scalar);
-    ArrayType *ArrayxdSubScalar(ArrayType *array, int scalar);
-    ArrayType *ArrayxdMulScalar(ArrayType *array, int scalar);
+    ArrayType *ArrayXdAddScalar(ArrayType *array, int scalar);
+    ArrayType *ArrayXdSubScalar(ArrayType *array, int scalar);
+    ArrayType *ArrayXdMulScalar(ArrayType *array, int scalar);
 
     // ARRAY CREATION
-    ArrayType *ArrayxdRandom(int size);
-    ArrayType *ArrayxdConstant(int size, int value);
+    ArrayType *ArrayXdRandom(int size);
+    ArrayType *ArrayXdConstant(int size, int value);
 
     // DISTANCE METRICS
-    double     ArrayxdEuclidean(ArrayType *a1, ArrayType *a2);
-    double     ArrayxdManhattan(ArrayType *a1, ArrayType *a2);
-    double     ArrayxdUSRSim(ArrayType *a1, ArrayType *a2);
-    double     ArrayxdUSRCatSim(ArrayType *a1, ArrayType *a2, float ow, float hw, float rw, float aw, float dw);
+    double     ArrayXdEuclidean(ArrayType *a1, ArrayType *a2);
+    double     ArrayXdManhattan(ArrayType *a1, ArrayType *a2);
+    double     ArrayXdUSRSim(ArrayType *a1, ArrayType *a2);
+    double     ArrayXdUSRCatSim(ArrayType *a1, ArrayType *a2, float ow, float hw, float rw, float aw, float dw);
 
 #ifdef __cplusplus
 }

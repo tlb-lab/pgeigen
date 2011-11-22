@@ -47,16 +47,16 @@ Datum array_has_nulls(PG_FUNCTION_ARGS)
     PG_RETURN_BOOL(array_contains_nulls(array));
 }
 
-/*
- ARRAY CREATION FUNCTIONS
-*/
+
+////////////////////////////ARRAY CREATION FUNCTIONS////////////////////////////
+
 
 PG_FUNCTION_INFO_V1(arrayxi_random);
 Datum arrayxi_random(PG_FUNCTION_ARGS)
 {
     int size = PG_GETARG_INT32(0);
 
-    PG_RETURN_ARRAYTYPE_P(ArrayxiRandom(size));
+    PG_RETURN_ARRAYTYPE_P(ArrayXiRandom(size));
 }
 
 PG_FUNCTION_INFO_V1(arrayxi_constant);
@@ -65,12 +65,12 @@ Datum arrayxi_constant(PG_FUNCTION_ARGS)
     int size = PG_GETARG_INT32(0);
     int value = PG_GETARG_INT32(1);
 
-    PG_RETURN_ARRAYTYPE_P(ArrayxiConstant(size, value));
+    PG_RETURN_ARRAYTYPE_P(ArrayXiConstant(size, value));
 }
 
-/*
- OPERATIONS ON SINGLE ARRAYS
-*/
+
+//////////////////////////OPERATIONS ON SINGLE ARRAYS///////////////////////////
+
 
 // RETURNS THE NUMBER OF ELEMENTS IN THE ARRAY
 PG_FUNCTION_INFO_V1(arrayxi_size);
@@ -78,7 +78,7 @@ Datum arrayxi_size(PG_FUNCTION_ARGS)
 {
     ArrayType  *array = PG_GETARG_ARRAYTYPE_P(0);
 
-    PG_RETURN_INT32(ArrayxiSize(array));
+    PG_RETURN_INT32(ArrayXiSize(array));
 }
 
 // RETURNS THE NUMBER OF NON-ZERO ELEMENTS IN THE ARRAY
@@ -87,7 +87,7 @@ Datum arrayxi_nonzeros(PG_FUNCTION_ARGS)
 {
     ArrayType  *array = PG_GETARG_ARRAYTYPE_P(0);
 
-    PG_RETURN_INT32(ArrayxiNonZeros(array));
+    PG_RETURN_INT32(ArrayXiNonZeros(array));
 }
 
 // RETURNS SMALLEST COEFFICIENT IN ARRAY
@@ -96,7 +96,7 @@ Datum arrayxi_min(PG_FUNCTION_ARGS)
 {
     ArrayType  *array = PG_GETARG_ARRAYTYPE_P(0);
 
-    PG_RETURN_INT32(ArrayxiMinCoeff(array));
+    PG_RETURN_INT32(ArrayXiMinCoeff(array));
 }
 
 // RETURNS LARGEST COEFFICIENT IN ARRAY
@@ -105,7 +105,7 @@ Datum arrayxi_max(PG_FUNCTION_ARGS)
 {
     ArrayType  *array = PG_GETARG_ARRAYTYPE_P(0);
 
-    PG_RETURN_INT32(ArrayxiMaxCoeff(array));
+    PG_RETURN_INT32(ArrayXiMaxCoeff(array));
 }
 
 // SUMS ARRAY
@@ -114,7 +114,7 @@ Datum arrayxi_sum(PG_FUNCTION_ARGS)
 {
     ArrayType  *array = PG_GETARG_ARRAYTYPE_P(0);
 
-    PG_RETURN_INT64(ArrayxiSum(array));
+    PG_RETURN_INT64(ArrayXiSum(array));
 }
 
 // SUMS ARRAY
@@ -123,7 +123,7 @@ Datum arrayxi_mean(PG_FUNCTION_ARGS)
 {
     ArrayType  *array = PG_GETARG_ARRAYTYPE_P(0);
 
-    PG_RETURN_INT32(ArrayxiMean(array));
+    PG_RETURN_INT32(ArrayXiMean(array));
 }
 
 PG_FUNCTION_INFO_V1(arrayxi_abs);
@@ -131,12 +131,20 @@ Datum arrayxi_abs(PG_FUNCTION_ARGS)
 {
     ArrayType  *array = PG_GETARG_ARRAYTYPE_P(0);
 
-    PG_RETURN_ARRAYTYPE_P(ArrayxiAbs(array));
+    PG_RETURN_ARRAYTYPE_P(ArrayXiAbs(array));
 }
 
-/*
- ARRAY ARITHMETIC FUNCTIONS
-*/
+PG_FUNCTION_INFO_V1(arrayxi_binary);
+Datum arrayxi_binary(PG_FUNCTION_ARGS)
+{
+    ArrayType  *array = PG_GETARG_ARRAYTYPE_P(0);
+
+    PG_RETURN_ARRAYTYPE_P(ArrayXiBinary(array));
+}
+
+
+//////////////////////////ARRAY ARITHMETIC FUNCTIONS////////////////////////////
+
 
 PG_FUNCTION_INFO_V1(arrayxi_add);
 Datum arrayxi_add(PG_FUNCTION_ARGS)
@@ -144,7 +152,7 @@ Datum arrayxi_add(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_ARRAYTYPE_P(ArrayxiAdd(a1,a2));
+    PG_RETURN_ARRAYTYPE_P(ArrayXiAdd(a1,a2));
 }
 
 PG_FUNCTION_INFO_V1(arrayxi_sub);
@@ -153,7 +161,7 @@ Datum arrayxi_sub(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_ARRAYTYPE_P(ArrayxiSub(a1,a2));
+    PG_RETURN_ARRAYTYPE_P(ArrayXiSub(a1,a2));
 }
 
 PG_FUNCTION_INFO_V1(arrayxi_mul);
@@ -162,7 +170,7 @@ Datum arrayxi_mul(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_ARRAYTYPE_P(ArrayxiMul(a1,a2));
+    PG_RETURN_ARRAYTYPE_P(ArrayXiMul(a1,a2));
 }
 
 PG_FUNCTION_INFO_V1(arrayxi_div);
@@ -171,10 +179,12 @@ Datum arrayxi_div(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_ARRAYTYPE_P(ArrayxiDiv(a1,a2));
+    PG_RETURN_ARRAYTYPE_P(ArrayXiDiv(a1,a2));
 }
 
-/* ARRAY SCALAR ARITHMETIC FUNCTIONS */
+
+//////////////////////ARRAY SCALAR ARITHMETIC FUNCTIONS/////////////////////////
+
 
 //
 PG_FUNCTION_INFO_V1(arrayxi_add_scalar);
@@ -183,7 +193,7 @@ Datum arrayxi_add_scalar(PG_FUNCTION_ARGS)
     ArrayType *array = PG_GETARG_ARRAYTYPE_P(0);
     int        scalar = PG_GETARG_INT32(1);
 
-    PG_RETURN_ARRAYTYPE_P(ArrayxiAddScalar(array,scalar));
+    PG_RETURN_ARRAYTYPE_P(ArrayXiAddScalar(array,scalar));
 }
 
 //
@@ -193,7 +203,7 @@ Datum arrayxi_sub_scalar(PG_FUNCTION_ARGS)
     ArrayType *array = PG_GETARG_ARRAYTYPE_P(0);
     int        scalar = PG_GETARG_INT32(1);
 
-    PG_RETURN_ARRAYTYPE_P(ArrayxiSubScalar(array,scalar));
+    PG_RETURN_ARRAYTYPE_P(ArrayXiSubScalar(array,scalar));
 }
 
 //
@@ -203,7 +213,7 @@ Datum arrayxi_mul_scalar(PG_FUNCTION_ARGS)
     ArrayType *array = PG_GETARG_ARRAYTYPE_P(0);
     int        scalar = PG_GETARG_INT32(1);
 
-    PG_RETURN_ARRAYTYPE_P(ArrayxiMulScalar(array,scalar));
+    PG_RETURN_ARRAYTYPE_P(ArrayXiMulScalar(array,scalar));
 }
 
 /* ARRAY SET ALGEBRA */
@@ -216,7 +226,7 @@ Datum arrayxi_contains(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_BOOL(ArrayxiContains(a1,a2));
+    PG_RETURN_BOOL(ArrayXiContains(a1,a2));
 }
 
 PG_FUNCTION_INFO_V1(arrayxi_contained);
@@ -225,7 +235,7 @@ Datum arrayxi_contained(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_BOOL(ArrayxiContains(a2,a1));
+    PG_RETURN_BOOL(ArrayXiContains(a2,a1));
 }
 
 // RETURNS TRUE IF THE ARRAYS HAVE OVERLAPPING NON-NULL ELEMENTS
@@ -235,7 +245,7 @@ Datum arrayxi_overlaps(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_BOOL(ArrayxiOverlaps(a1,a2));
+    PG_RETURN_BOOL(ArrayXiOverlaps(a1,a2));
 }
 
 // RETURNS THE INTERSECTION BETWEEN BOTH ARRAYS
@@ -245,7 +255,7 @@ Datum arrayxi_intersection(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_ARRAYTYPE_P(ArrayxiIntersection(a1,a2));
+    PG_RETURN_ARRAYTYPE_P(ArrayXiIntersection(a1,a2));
 }
 
 // RETURNS THE INTERSECTION BETWEEN BOTH ARRAYS
@@ -255,7 +265,7 @@ Datum arrayxi_union(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_ARRAYTYPE_P(ArrayxiUnion(a1,a2));
+    PG_RETURN_ARRAYTYPE_P(ArrayXiUnion(a1,a2));
 }
 
 
@@ -269,7 +279,7 @@ Datum arrayxi_bray_curtis(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_FLOAT8(ArrayxiBrayCurtis(a1,a2));
+    PG_RETURN_FLOAT8(ArrayXiBrayCurtis(a1,a2));
 }
 
 // RETURNS THE BRAY-CURTIS DISSIMILARITY
@@ -279,7 +289,7 @@ Datum arrayxi_dice(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_FLOAT8(ArrayxiKulczynski(a1,a2));
+    PG_RETURN_FLOAT8(ArrayXiKulczynski(a1,a2));
 }
 
 // RETURNS THE BRAY-CURTIS DISSIMILARITY
@@ -289,7 +299,7 @@ Datum arrayxi_kulcz(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_FLOAT8(ArrayxiKulczynski(a1,a2));
+    PG_RETURN_FLOAT8(ArrayXiKulczynski(a1,a2));
 }
 
 // RETURNS THE BRAY-CURTIS DISSIMILARITY
@@ -299,7 +309,7 @@ Datum arrayxi_ochiai(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_FLOAT8(ArrayxiOchiai(a1,a2));
+    PG_RETURN_FLOAT8(ArrayXiOchiai(a1,a2));
 }
 
 // RETURNS THE INTERSECTION BETWEEN BOTH ARRAYS
@@ -309,7 +319,7 @@ Datum arrayxi_russell_rao(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_FLOAT8(ArrayxiRussellRao(a1,a2));
+    PG_RETURN_FLOAT8(ArrayXiRussellRao(a1,a2));
 }
 
 // RETURNS THE INTERSECTION BETWEEN BOTH ARRAYS
@@ -319,7 +329,7 @@ Datum arrayxi_simpson(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_FLOAT8(ArrayxiSimpson(a1,a2));
+    PG_RETURN_FLOAT8(ArrayXiSimpson(a1,a2));
 }
 
 // RETURNS THE INTERSECTION BETWEEN BOTH ARRAYS
@@ -329,8 +339,19 @@ Datum arrayxi_tversky(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_FLOAT8(ArrayxiTversky(a1,a2));
+    PG_RETURN_FLOAT8(ArrayXiTversky(a1,a2));
 }
+
+// RETURNS THE INTERSECTION BETWEEN BOTH ARRAYS
+PG_FUNCTION_INFO_V1(arrayxi_fuzcavsim_global);
+Datum arrayxi_fuzcavsim_global(PG_FUNCTION_ARGS)
+{
+    ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
+    ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
+
+    PG_RETURN_FLOAT8(ArrayXiFuzCavSimGlobal(a1,a2));
+}
+
 
 //////////////////////////NORMAL DISTANCE METRICS///////////////////////////////
 
@@ -342,7 +363,7 @@ Datum arrayxi_euclidean_dist(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_FLOAT8(ArrayxiEuclideanDist(a1,a2));
+    PG_RETURN_FLOAT8(ArrayXiEuclideanDist(a1,a2));
 }
 
 // RETURNS THE INTERSECTION BETWEEN BOTH ARRAYS
@@ -352,18 +373,10 @@ Datum arrayxi_manhattan_dist(PG_FUNCTION_ARGS)
     ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
     ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_FLOAT8(ArrayxiManhattanDist(a1,a2));
+    PG_RETURN_FLOAT8(ArrayXiManhattanDist(a1,a2));
 }
 
-// RETURNS THE INTERSECTION BETWEEN BOTH ARRAYS
-PG_FUNCTION_INFO_V1(arrayxi_fuzcavsim_global);
-Datum arrayxi_fuzcavsim_global(PG_FUNCTION_ARGS)
-{
-    ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
-    ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
 
-    PG_RETURN_FLOAT8(ArrayxiFuzCavSimGlobal(a1,a2));
-}
 
 ///////////////////DEFAULT METRIC CUTOFF GETTERS & SETTERS//////////////////////
 
@@ -378,10 +391,10 @@ Datum show_arrayxi_similarity_limit(PG_FUNCTION_ARGS)
 {
     char  *metric = PG_GETARG_TEXT_AS_CSTRING(0);
     float4  limit;
-    
+
     if (strcmp(metric, "tversky_alpha") == 0) limit = arrayxi_tversky_alpha;
     else if (strcmp(metric, "tversky_beta") == 0) limit = arrayxi_tversky_beta;
-    
+
     else
     {
         ereport(ERROR,
@@ -389,7 +402,7 @@ Datum show_arrayxi_similarity_limit(PG_FUNCTION_ARGS)
                      errmsg("unknown similarity metric or parameter: \"%s\"", metric))
                 );
     }
-        
+
     PG_RETURN_FLOAT4(limit);
 }
 
@@ -399,18 +412,18 @@ Datum set_arrayxi_similarity_limit(PG_FUNCTION_ARGS)
 {
     float4  limit  = PG_GETARG_FLOAT4(0);
     char   *metric = PG_GETARG_TEXT_AS_CSTRING(1);
- 
-    if (limit < 0 || limit > 1.0) 
+
+    if (limit < 0 || limit > 1.0)
     {
         ereport(ERROR,
                     (errcode(ERRCODE_DATA_EXCEPTION),
                      errmsg("invalid limit %f for parameter \"%s\": value has to be in the range [0.0 1.0].",
                             limit, metric)));
     }
-    
+
     if (strcmp(metric, "tversky_alpha") == 0) arrayxi_tversky_alpha = limit;
     else if (strcmp(metric, "tversky_beta") == 0) arrayxi_tversky_beta = limit;
-    
+
     else
     {
         ereport(ERROR,
@@ -418,6 +431,6 @@ Datum set_arrayxi_similarity_limit(PG_FUNCTION_ARGS)
                      errmsg("unkknown similarity metric: \"%s\"", metric))
                 );
     }
-    
+
     PG_RETURN_FLOAT4(limit);
  }
