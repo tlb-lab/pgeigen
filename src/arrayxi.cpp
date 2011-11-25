@@ -1,11 +1,6 @@
 #include <Eigen/Dense>
 #include "arrayxi.h"
 
-#define ARRINTDATA(array)   ((int *)ARR_DATA_PTR(array))
-#define ARRNELEMS(x)        ArrayGetNItems( ARR_NDIM(x), ARR_DIMS(x))
-#define ARREQSIZE(a,b)      if (a != b) ereport(ERROR, (errcode(ERRCODE_DATA_EXCEPTION), errmsg("arrays must have the same number of elements.")))
-#define INTERSECT_SIZE(a,b) (a==b).select(a, 0).count();
-
 using namespace Eigen;
 
 // CONSTRUCTS A POSTGRESQL ARRAY FROM AN EIGEN OBJECTS
@@ -22,23 +17,43 @@ ArrayType *arrayxi_to_arraytype(const ArrayXi &arrayxi, int size)
 
 // RETURNS ARRAY WITH GIVEN CONSTANT VALUE
 extern "C"
-ArrayType *ArrayXiConstant(int size, int value)
+ArrayType *ArrayXiCopy(ArrayType *array)
 {
-    // INITIALIZE ARRAY ACCORDING TO THE GIVEN SIZE
-    ArrayXi arrayxi(size);
+    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
+    int size = ARRNELEMS(array);
 
-    // SET ALL ELEMENTS TO RANDOM
-    arrayxi.setConstant(value);
+    // MAP POSTGRESQL ARRAY TO
+    Map<ArrayXi> arrayxi(ARRINTDATA(array), size);
 
     return arrayxi_to_arraytype(arrayxi, size);
 }
 
-// RETURNS ARRAY WITH RANDON ELEMENTS
+// RETURNS ARRAY WITH GIVEN CONSTANT VALUE
+extern "C"
+ArrayType *ArrayXiConstant(int size, int value)
+{
+    // INITIALIZE ARRAY ACCORDING TO THE GIVEN SIZE
+    ArrayXi arrayxi = ArrayXi::Constant(size, value);
+
+    return arrayxi_to_arraytype(arrayxi, size);
+}
+
+// RETURNS ARRAY WITH RANDOM ELEMENTS
 extern "C"
 ArrayType *ArrayXiRandom(int size)
 {
     // INITIALIZE ARRAY ACCORDING TO THE GIVEN SIZE
     ArrayXi arrayxi = ArrayXi::Random(size);
+
+    return arrayxi_to_arraytype(arrayxi, size);
+}
+
+// RETURNS AN ARRAYS WITH ELEMENTS EQUALLY SPACE BETWEEN LOW AND HIGH
+extern "C"
+ArrayType *ArrayXiLinSpaced(int size, int low, int high)
+{
+    // INITIALIZE ARRAY ACCORDING TO THE GIVEN SIZE
+    ArrayXi arrayxi = ArrayXi::LinSpaced(size, low, high);
 
     return arrayxi_to_arraytype(arrayxi, size);
 }
@@ -195,7 +210,9 @@ ArrayType *ArrayXiDiv(ArrayType *a1, ArrayType *a2)
     return arrayxi_to_arraytype(arrayxi1 / arrayxi2, size);
 }
 
-/* SCALAR ARITHMETIC */
+
+////////////////////////////SCALAR ARITHMETIC///////////////////////////////////
+
 
 // ADD SCALAR TO EVERY ELEMENT
 extern "C"
@@ -235,6 +252,22 @@ ArrayType *ArrayXiMulScalar(ArrayType *array, int scalar)
 
 // RETURNS TRUE IF THE FIRST ARRAY CONTAINS ALL ELEMENTS OF THE SECOND
 extern "C"
+bool ArrayXiEqual(ArrayType *a1, ArrayType *a2)
+{
+    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
+    int size = ARRNELEMS(a1);
+
+    ARREQSIZE(size, ARRNELEMS(a2));
+
+    // MAP DATA TO EIGEN ARRAYS
+    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
+    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    
+    return (arrayxi1==arrayxi2).all();
+}
+
+// RETURNS TRUE IF THE FIRST ARRAY CONTAINS ALL ELEMENTS OF THE SECOND
+extern "C"
 bool ArrayXiContains(ArrayType *a1, ArrayType *a2)
 {
     // GET NUMBER OF ELEMENTS IN FIRST ARRAY
@@ -246,7 +279,7 @@ bool ArrayXiContains(ArrayType *a1, ArrayType *a2)
     Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
     Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
 
-    return (arrayxi1==arrayxi2).count() == arrayxi2.count();
+    return ((arrayxi1 > 0) == (arrayxi2 > 0)).count() == arrayxi2.count();
 }
 
 // RETURNS TRUE IF THE ARRAYS HAVE AT LEAST ONE NON-NULL ELEMENT IN COMMON
@@ -262,10 +295,10 @@ bool ArrayXiOverlaps(ArrayType *a1, ArrayType *a2)
     Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
     Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
 
-    return (arrayxi1==arrayxi2).any();
+    return ((arrayxi1 > 0) == (arrayxi2 > 0)).any();
 }
 
-// RETURNS TRUE IF THE FIRST ARRAY CONTAINS ALL ELEMENTS OF THE SECOND
+// RETURNS THE INTERSECTION BETWEEN THE ARRAYS
 extern "C"
 ArrayType *ArrayXiIntersection(ArrayType *a1, ArrayType *a2)
 {
@@ -298,6 +331,24 @@ ArrayType *ArrayXiUnion(ArrayType *a1, ArrayType *a2)
     return arrayxi_to_arraytype(arrayxi1.max(arrayxi2), size);
 }
 
+// RETURNS THE BINARY UNION OF BOTH ARRAYS
+extern "C"
+ArrayType *ArrayXiBinaryUnion(ArrayType *a1, ArrayType *a2)
+{
+    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
+    int size = ARRNELEMS(a1);
+
+    ARREQSIZE(size, ARRNELEMS(a2));
+
+    // MAP DATA TO EIGEN ARRAYS
+    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
+    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+
+    ArrayXi binary_union = (arrayxi1.max(arrayxi2) > 0).cast<int>();
+    
+    return arrayxi_to_arraytype(binary_union, size);
+}
+
 
 ///////////////////////NORMALIZED SIMILARITY METRICS////////////////////////////
 
@@ -315,7 +366,7 @@ double ArrayXiBrayCurtis(ArrayType *a1, ArrayType *a2)
     Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
     Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
 
-    return 1.0 - ((arrayxi1-arrayxi2).abs().sum() / (float) (arrayxi1+arrayxi2).sum());
+    return 1.0 - ((arrayxi1-arrayxi2).abs().sum() / (double) (arrayxi1+arrayxi2).sum());
 }
 
 // RETURNS THE DICE SIMILARITY
@@ -334,13 +385,15 @@ double ArrayXiDice(ArrayType *a1, ArrayType *a2)
     // COMMON COUNTS
     unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
 
-    return 2 * c / (float) size;
+    return 2 * c / (double) size;
 }
 
 // RETURNS THE KULCZYNSKI SIMILARITY
 extern "C"
 double ArrayXiKulczynski(ArrayType *a1, ArrayType *a2)
 {
+    double similarity = 0.0;
+    
     // GET NUMBER OF ELEMENTS IN FIRST ARRAY
     int size = ARRNELEMS(a1);
 
@@ -353,11 +406,14 @@ double ArrayXiKulczynski(ArrayType *a1, ArrayType *a2)
     // SET COUNTS ON THE INDIVIDUAL ARRAYS
     unsigned int A = arrayxi1.count();
     unsigned int B = arrayxi2.count();
-
+    
     // COMMON COUNTS
     unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
 
-    return c * (A + B) / (float) (2 * A * B);
+    // AVOID DIVISION BY ZERO
+    if (A != 0 && B != 0) similarity = c * (A + B) / (double) (2 * A * B);
+    
+    return similarity;
 }
 
 // RETURNS THE NORMALIZED EUCLIDEAN SIMILARITY
@@ -380,7 +436,7 @@ double ArrayXiNormEuclidean(ArrayType *a1, ArrayType *a2)
     // COMMON COUNTS
     unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
 
-    return sqrt((A + B - 2 * c) / (float) size);
+    return sqrt((A + B - 2 * c) / (double) size);
 }
 
 // RETURNS THE NORMALIZED MANHATTAN SIMILARITY
@@ -403,13 +459,15 @@ double ArrayXiNormManhattan(ArrayType *a1, ArrayType *a2)
     // COMMON COUNTS
     unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
 
-    return (A + B - 2 * c) / (float) size;
+    return (A + B - 2 * c) / (double) size;
 }
 
 // RETURNS THE OCHIAI/COSINE SIMILARITY
 extern "C"
 double ArrayXiOchiai(ArrayType *a1, ArrayType *a2)
 {
+    double similarity = 0.0;
+    
     // GET NUMBER OF ELEMENTS IN FIRST ARRAY
     int size = ARRNELEMS(a1);
 
@@ -426,7 +484,10 @@ double ArrayXiOchiai(ArrayType *a1, ArrayType *a2)
     // COMMON COUNTS
     unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
 
-    return c / sqrt(A*B);
+    // AVOID DIVISION BY ZERO
+    if (A != 0 && B != 0) similarity = c / sqrt(A*B);
+    
+    return similarity;
 }
 
 // RETURNS THE RUSSELL-RAO SIMILARITY
@@ -445,13 +506,15 @@ double ArrayXiRussellRao(ArrayType *a1, ArrayType *a2)
     // COMMON COUNTS
     unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
 
-    return c / (float) size;
+    return c / (double) size;
 }
 
 // RETURNS THE SIMPSON SIMILARITY - FUZCAV DEFAULT SIMILARITY
 extern "C"
 double ArrayXiSimpson(ArrayType *a1, ArrayType *a2)
 {
+    double similarity = 0.0;
+    
     // GET NUMBER OF ELEMENTS IN FIRST ARRAY
     int size = ARRNELEMS(a1);
 
@@ -468,13 +531,46 @@ double ArrayXiSimpson(ArrayType *a1, ArrayType *a2)
     // COMMON COUNTS
     unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
 
-    return c / (float) std::min(A,B);
+    // AVOID DIVISION BY ZERO
+    if (A != 0 && B != 0) similarity = c / (double) std::min(A,B);
+    
+    return similarity;
+}
+
+// RETURNS THE SIMPSON SIMILARITY WITH MAX() INSTEAD OF MIN()
+extern "C"
+double ArrayXiSimpsonGlobal(ArrayType *a1, ArrayType *a2)
+{
+    double similarity = 0.0;
+    
+    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
+    int size = ARRNELEMS(a1);
+
+    ARREQSIZE(size, ARRNELEMS(a2));
+
+    // MAP DATA TO EIGEN ARRAYS
+    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
+    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+
+    // SET COUNTS ON THE INDIVIDUAL ARRAYS
+    unsigned int A = arrayxi1.count();
+    unsigned int B = arrayxi2.count();
+
+    // COMMON COUNTS
+    unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
+
+    // AVOID DIVISION BY ZERO
+    if (A != 0 && B != 0) similarity = c / (double) std::max(A,B);
+    
+    return similarity;
 }
 
 // RETURNS THE TVERSKY SIMILARITY
 extern "C"
 double ArrayXiTversky(ArrayType *a1, ArrayType *a2)
 {
+    double similarity = 0.0;
+    
     // GET NUMBER OF ELEMENTS IN FIRST ARRAY
     int size = ARRNELEMS(a1);
 
@@ -491,11 +587,19 @@ double ArrayXiTversky(ArrayType *a1, ArrayType *a2)
     // COMMON COUNTS
     unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
 
-    return c / (float) arrayxi_tversky_alpha * A + arrayxi_tversky_beta * B + (1 - arrayxi_tversky_alpha + arrayxi_tversky_beta) * c;
+    // AVOID DIVISION BY ZERO
+    if (A != 0 && B != 0) 
+    {
+        similarity = c / (double) (arrayxi_tversky_alpha * A + 
+                                  arrayxi_tversky_beta * B + 
+                                  (1 - arrayxi_tversky_alpha + arrayxi_tversky_beta) * c);
+    }
+        
+    return similarity;
 }
 
 
-//////////////////////////NORMAL DISTANCE METRICS///////////////////////////////
+////////////////////////////////DISTANCE METRICS////////////////////////////////
 
 
 // RETURNS THE EUCLIDEAN DISTANCE BETWEEN BOTH ARRAYS
@@ -530,6 +634,26 @@ double ArrayXiManhattanDist(ArrayType *a1, ArrayType *a2)
     return (arrayxi1-arrayxi2).abs().sum();
 }
 
+// RETURNS THE MEAN HAMMING DISTANCE
+extern "C"
+double ArrayXiMeanHammingDist(ArrayType *a1, ArrayType *a2)
+{
+    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
+    int size = ARRNELEMS(a1);
+
+    ARREQSIZE(size, ARRNELEMS(a2));
+
+    // MAP DATA TO EIGEN ARRAYS
+    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
+    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+
+    // UNIQUE COUNTS IN BOTH ARRAYS
+    unsigned int a = UNIQUE_LEFT_SIZE(arrayxi1,arrayxi2);
+    unsigned int b = UNIQUE_RIGHT_SIZE(arrayxi1,arrayxi2);
+    
+    return (a + b) / (double) size;
+}
+
 
 /////////////////////FUZCAV-SPECIFIC SIMILARITY METRICS/////////////////////////
 
@@ -548,7 +672,99 @@ double ArrayXiFuzCavSimGlobal(ArrayType *a1, ArrayType *a2)
     Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
 
     // COUNTS THAT ARE SHARED BETWEEN THE FUZCAV FINGERPRINTS
-    double common_counts = INTERSECT_SIZE(arrayxi1,arrayxi2);
+    unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
 
-    return (common_counts / std::max(arrayxi1.count(), arrayxi2.count()));
+    return (c / (double) std::max(arrayxi1.count(), arrayxi2.count()));
+}
+
+/* Returns the maximum possible similarity value between two arrays for a given 
+ * metric. This is necessary to calculate similarity values for inner gist nodes, 
+ * which are not real fingerprints.
+ * 
+ * From: Swamidass SJ, Baldi P. Bounds and algorithms for fast exact searches of 
+ *       chemical fingerprints in linear and sublinear time.    
+ *       j chem inf model. 2007 mar-apr;47(2):302-17 
+ * 
+ * Where:
+ *        a is the count of values > 0 in array A but not in array B.
+ *        b is the count of values > 0 in array B but not in array A.
+ *        c is the count of equal position in both array A and array B.
+ *        d is the count of the zeros in both array A and array B.
+ *      
+ *        In addition:
+ * 
+ *        n = ( a + b + c + d ) total number of positions in arrays A or B.
+ *        A = ( a + c ) the count of the values > 0 in object A.
+ *        B = ( b + c ) the count of the values > 0 in object B.
+ */
+extern "C"
+float SimilarityUpperBound(ArrayType *a1, ArrayType *a2, char *metric)
+{
+    float upper_bound = 0.0;
+    
+    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
+    int size = ARRNELEMS(a1);
+
+    ARREQSIZE(size, ARRNELEMS(a2));
+
+    // MAP DATA TO EIGEN ARRAYS
+    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
+    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    
+    // QUERY ARRAY HAS TO BE CONVERTED TO BINARY VERSION TO BE COMPATIBLE WITH
+    // THE GIST INTERNAL NODES
+    unsigned int c = INTERSECT_SIZE(arrayxi1, (arrayxi2 > 0).cast<int>());
+    unsigned int A = arrayxi1.count();
+    unsigned int B = arrayxi2.count();
+    
+    // IN GIST CONTEXT, A1 IS KEY A2 IS QUERY
+
+    if (strcmp(metric,"dice") == 0) 
+    {
+        upper_bound = 2 * c / (float) B;
+    }
+    
+    else if (strcmp(metric,"euclidean") == 0) 
+    {
+        upper_bound = sqrt((B - 2 * c) / (float) size);
+    }
+    
+    else if (strcmp(metric,"kulczynski") == 0) 
+    {
+        upper_bound = A + B / (float) (2 * std::max(A,B));
+    }
+    
+    else if (strcmp(metric,"manhattan") == 0) 
+    {
+        upper_bound = (B - 2 * c) / (float) size;
+    }
+    
+    else if (strcmp(metric,"ochiai") == 0) 
+    {
+        upper_bound = c / sqrt(B);
+    }
+    
+    else if (strcmp(metric,"russell-rao") == 0) 
+    {
+        upper_bound = B / (float) size;
+    }
+    
+    // NO REDUCTION OF SEARCH SPACE HERE
+    else if (strcmp(metric,"simpson") == 0) 
+    {
+        upper_bound = c / (float) std::min(A,B);
+    }
+    
+    else if (strcmp(metric,"tversky") == 0) 
+    {
+        upper_bound = c / (arrayxi_tversky_beta * B);
+    }
+    
+    else 
+    {
+        ereport(ERROR, (errcode(ERRCODE_DATA_EXCEPTION), 
+                        errmsg("unknown metric for similarity upper bound calculation: %s", metric)));
+    }
+    
+    return upper_bound;
 }

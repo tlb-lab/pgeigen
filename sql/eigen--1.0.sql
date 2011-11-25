@@ -465,6 +465,15 @@ COMMENT ON FUNCTION arrayxi_constant(size INTEGER, value BIGINT) IS
     'Returns an array of the given size with all elements set to the given constant value.';
 
 
+CREATE  FUNCTION arrayxi_lin_spaced(size INTEGER, low INTEGER, high INTEGER)
+        RETURNS arrayxi
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION arrayxi_lin_spaced(size INTEGER, low INTEGER, high INTEGER) IS
+    'Returns an array of the given size with elements equally spaced between low and high.';
+
+
 CREATE  FUNCTION arrayxi_random(size INTEGER)
         RETURNS arrayxi
         AS '$libdir/eigen'
@@ -473,7 +482,9 @@ CREATE  FUNCTION arrayxi_random(size INTEGER)
 COMMENT ON FUNCTION arrayxi_random(size INTEGER) IS
     'Returns an array of the given size with all elements set to a random value.';
 
+
 -- ARRAY PROPERTIES
+
 
 CREATE  FUNCTION arrayxi_size(arrayxi)
         RETURNS INTEGER
@@ -537,7 +548,7 @@ COMMENT ON FUNCTION arrayxi_binary(arrayxi) IS
     'Returns a binary version of the array, i.e. all elements > 0 are set to 1.';
 
 
--- ARRAY ARITHMETIC
+------------------------------ARRAY ARITHMETIC----------------------------------
 
 
 CREATE  FUNCTION arrayxi_add(arrayxi, arrayxi)
@@ -545,7 +556,8 @@ CREATE  FUNCTION arrayxi_add(arrayxi, arrayxi)
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION arrayxi_add(arrayxi, arrayxi) IS 'Adds two arrays elementwise.';
+COMMENT ON FUNCTION arrayxi_add(arrayxi, arrayxi) 
+    IS 'Adds two arrays elementwise.';
 
 
 CREATE  OPERATOR + (
@@ -554,7 +566,8 @@ CREATE  OPERATOR + (
         RIGHTARG = arrayxi,
         COMMUTATOR = +);
 
-COMMENT ON OPERATOR +(arrayxi, arrayxi) IS 'Subtracts the second array from the first.';
+COMMENT ON OPERATOR +(arrayxi, arrayxi) 
+    IS 'Adds the first array to the first.';
 
 
 CREATE  FUNCTION arrayxi_add(arrayxi, scalar INTEGER)
@@ -562,7 +575,9 @@ CREATE  FUNCTION arrayxi_add(arrayxi, scalar INTEGER)
         AS '$libdir/eigen', 'arrayxi_add_scalar'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION arrayxi_add(arrayxi, scalar INTEGER) IS 'Adds scalar to every element of array.';
+COMMENT ON FUNCTION arrayxi_add(arrayxi, scalar INTEGER) IS 
+    'Adds scalar to every element of array.';
+
 
 CREATE  OPERATOR + (
         PROCEDURE = arrayxi_add,
@@ -570,7 +585,8 @@ CREATE  OPERATOR + (
         RIGHTARG = INTEGER,
         COMMUTATOR = +);
 
-COMMENT ON OPERATOR +(arrayxi, INTEGER) IS 'Adds scalar to every element of array.';
+COMMENT ON OPERATOR +(arrayxi, INTEGER) IS 
+    'Adds scalar to every element of array.';
 
 
 CREATE  FUNCTION arrayxi_sub(arrayxi, arrayxi)
@@ -578,7 +594,8 @@ CREATE  FUNCTION arrayxi_sub(arrayxi, arrayxi)
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION arrayxi_sub(arrayxi, arrayxi) IS 'Subtracts the second array from the first.';
+COMMENT ON FUNCTION arrayxi_sub(arrayxi, arrayxi) IS 
+    'Subtracts the second array from the first.';
 
 
 CREATE  OPERATOR - (
@@ -586,7 +603,8 @@ CREATE  OPERATOR - (
         LEFTARG = arrayxi,
         RIGHTARG = arrayxi);
 
-COMMENT ON OPERATOR -(arrayxi, arrayxi) IS 'Adds two arrays elementwise.';
+COMMENT ON OPERATOR -(arrayxi, arrayxi) IS 
+    'Adds two arrays elementwise.';
 
 
 CREATE  FUNCTION arrayxi_sub(arrayxi, scalar INTEGER)
@@ -594,14 +612,16 @@ CREATE  FUNCTION arrayxi_sub(arrayxi, scalar INTEGER)
         AS '$libdir/eigen', 'arrayxi_sub_scalar'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION arrayxi_sub(arrayxi, scalar INTEGER) IS 'Subtracts scalar from every element of array.';
+COMMENT ON FUNCTION arrayxi_sub(arrayxi, scalar INTEGER) IS 
+    'Subtracts scalar from every element of array.';
 
 CREATE  OPERATOR - (
         PROCEDURE = arrayxi_sub,
         LEFTARG = arrayxi,
         RIGHTARG = INTEGER);
 
-COMMENT ON OPERATOR -(arrayxi, INTEGER) IS 'Subtracts scalar from every element of array.';
+COMMENT ON OPERATOR -(arrayxi, INTEGER) IS 
+    'Subtracts scalar from every element of array.';
 
 
 CREATE  FUNCTION arrayxi_mul(arrayxi, arrayxi)
@@ -609,7 +629,8 @@ CREATE  FUNCTION arrayxi_mul(arrayxi, arrayxi)
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION arrayxi_mul(arrayxi, arrayxi) IS 'Multiplies both arrays elementwise.';
+COMMENT ON FUNCTION arrayxi_mul(arrayxi, arrayxi) IS 
+    'Multiplies both arrays elementwise.';
 
 
 CREATE  OPERATOR * (
@@ -630,6 +651,7 @@ CREATE  FUNCTION arrayxi_mul(arrayxi, scalar INTEGER)
 COMMENT ON FUNCTION arrayxi_mul(arrayxi, scalar INTEGER) IS
     'Multiplies scalar with every element of array.';
 
+
 CREATE  OPERATOR * (
         PROCEDURE = arrayxi_add,
         LEFTARG = arrayxi,
@@ -643,12 +665,51 @@ COMMENT ON OPERATOR *(arrayxi, INTEGER) IS
 ----------------------------ARRAY SET ALGEBRA-----------------------------------
 
 
+CREATE  FUNCTION arrayxi_eq(arrayxi, arrayxi)
+        RETURNS BOOLEAN
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION arrayxi_eq(arrayxi, arrayxi) IS 
+    'Returns true if the elements in both arrays are equal.';
+
+
+CREATE  OPERATOR = (
+        PROCEDURE = arrayxi_eq,
+        LEFTARG = arrayxi,
+        RIGHTARG = arrayxi,
+        COMMUTATOR = !=);
+
+COMMENT ON OPERATOR =(arrayxi, arrayxi) IS
+    'Returns true if the elements in both arrays are equal.';
+
+
+CREATE  FUNCTION arrayxi_ne(arrayxi, arrayxi)
+        RETURNS BOOLEAN
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION arrayxi_ne(arrayxi, arrayxi) IS 
+    'Returns true if the arrays are distinct.';
+
+
+CREATE  OPERATOR != (
+        PROCEDURE = arrayxi_ne,
+        LEFTARG = arrayxi,
+        RIGHTARG = arrayxi,
+        COMMUTATOR = =);
+
+COMMENT ON OPERATOR !=(arrayxi, arrayxi) IS
+    'Returns true if the arrays are distinct.';
+
+
 CREATE  FUNCTION arrayxi_contains(arrayxi, arrayxi)
         RETURNS BOOLEAN
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION arrayxi_contains(arrayxi, arrayxi) IS 'Returns true if the first array contains all elements of the second.';
+COMMENT ON FUNCTION arrayxi_contains(arrayxi, arrayxi) IS 
+    'Returns true if the first array contains all elements of the second.';
 
 
 CREATE  OPERATOR @> (
@@ -737,6 +798,15 @@ COMMENT ON OPERATOR |(arrayxi, arrayxi) IS
     'Returns the union of both arrays.';
 
 
+CREATE  FUNCTION arrayxi_binary_union(arrayxi, arrayxi)
+        RETURNS arrayxi
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION arrayxi_binary_union(arrayxi, arrayxi) IS
+    'Returns the binary union of both arrays.';
+
+
 -----------------------NORMALIZED SIMILARITY METRICS----------------------------
 
 
@@ -758,6 +828,25 @@ COMMENT ON FUNCTION arrayxi_dice(arrayxi, arrayxi) IS
     'Returns the Dice similarity between the arrays.';
 
 
+CREATE  FUNCTION arrayxi_euclidean(arrayxi, arrayxi)
+        RETURNS FLOAT
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION arrayxi_euclidean(arrayxi, arrayxi) IS
+    'Returns the Euclidean similarity between the arrays.';
+
+
+CREATE  OPERATOR -> (
+        PROCEDURE = arrayxi_euclidean,
+        LEFTARG = arrayxi,
+        RIGHTARG = arrayxi,
+        COMMUTATOR = ->);
+
+COMMENT ON OPERATOR ->(arrayxi, arrayxi) IS
+    'Returns the Euclidean similarity between the arrays.';
+
+
 CREATE  FUNCTION arrayxi_kulcz(arrayxi, arrayxi)
         RETURNS FLOAT
         AS '$libdir/eigen'
@@ -765,6 +854,35 @@ CREATE  FUNCTION arrayxi_kulcz(arrayxi, arrayxi)
 
 COMMENT ON FUNCTION arrayxi_kulcz(arrayxi, arrayxi) IS
     'Returns the Kulczynski similarity between the arrays.';
+
+
+CREATE  OPERATOR % (
+        PROCEDURE = arrayxi_kulcz,
+        LEFTARG = arrayxi,
+        RIGHTARG = arrayxi,
+        COMMUTATOR = %);
+
+COMMENT ON OPERATOR %(arrayxi, arrayxi) IS
+    'Returns the Kulczynski similarity between the arrays.';
+
+
+CREATE  FUNCTION arrayxi_manhattan(arrayxi, arrayxi)
+        RETURNS FLOAT
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION arrayxi_manhattan(arrayxi, arrayxi) IS
+    'Returns the Manhattan similarity between the arrays.';
+
+
+CREATE  OPERATOR ~> (
+        PROCEDURE = arrayxi_manhattan,
+        LEFTARG = arrayxi,
+        RIGHTARG = arrayxi,
+        COMMUTATOR = ~>);
+
+COMMENT ON OPERATOR ~>(arrayxi, arrayxi) IS
+    'Returns the Manhattan similarity between the arrays.';
 
 
 CREATE  FUNCTION arrayxi_ochiai(arrayxi, arrayxi)
@@ -792,7 +910,17 @@ CREATE  FUNCTION arrayxi_russell_rao(arrayxi, arrayxi)
         LANGUAGE C IMMUTABLE STRICT;
 
 COMMENT ON FUNCTION arrayxi_russell_rao(arrayxi, arrayxi) IS
-    'Returns the Russell-Rao similarity (FuzCav default) between the arrays.';
+    'Returns the Russell-Rao similarity between the arrays.';
+
+
+CREATE  OPERATOR ^ (
+        PROCEDURE = arrayxi_russell_rao,
+        LEFTARG = arrayxi,
+        RIGHTARG = arrayxi,
+        COMMUTATOR = ^);
+
+COMMENT ON OPERATOR ^(arrayxi, arrayxi) IS
+    'Returns the Russell-Rao similarity between the arrays.';
 
 
 CREATE  FUNCTION arrayxi_simpson(arrayxi, arrayxi)
@@ -804,6 +932,25 @@ COMMENT ON FUNCTION arrayxi_simpson(arrayxi, arrayxi) IS
     'Returns the Simpson similarity (FuzCav default) between the arrays.';
 
 
+CREATE  OPERATOR ^^ (
+        PROCEDURE = arrayxi_simpson,
+        LEFTARG = arrayxi,
+        RIGHTARG = arrayxi,
+        COMMUTATOR = ^^);
+
+COMMENT ON OPERATOR ^^(arrayxi, arrayxi) IS
+    'Returns the Simpson similarity (FuzCav default) between the arrays.';
+
+
+CREATE  FUNCTION arrayxi_simpson_global(arrayxi, arrayxi)
+        RETURNS FLOAT
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION arrayxi_simpson_global(arrayxi, arrayxi) IS
+    'Returns the global Simpson similarity between the arrays.';
+
+
 CREATE  FUNCTION arrayxi_tversky(arrayxi, arrayxi)
         RETURNS FLOAT
         AS '$libdir/eigen'
@@ -813,7 +960,36 @@ COMMENT ON FUNCTION arrayxi_tversky(arrayxi, arrayxi) IS
     'Returns the Tversky similarity between the arrays.';
 
 
-------------------------DISTANCE/SIMILARITY METRICS-----------------------------
+CREATE  OPERATOR %^ (
+        PROCEDURE = arrayxi_tversky,
+        LEFTARG = arrayxi,
+        RIGHTARG = arrayxi,
+        COMMUTATOR = %^);
+
+COMMENT ON OPERATOR %^(arrayxi, arrayxi) IS
+    'Returns the Tversky similarity between the arrays.';
+
+
+-----ARRAYXI DISTANCE METRICS: USED MOSTLY FOR THE KNN-GIST ORDER BY OPERATORS-----    
+
+
+CREATE FUNCTION arrayxi_dice_dist(arrayxi, arrayxi)
+    RETURNS FLOAT
+    AS '$libdir/eigen'
+    LANGUAGE C STRICT IMMUTABLE;
+
+COMMENT ON FUNCTION arrayxi_dice_dist(arrayxi, arrayxi) IS
+    'Returns the Dice distance between two arrays.';
+
+
+CREATE  OPERATOR <#> (
+        PROCEDURE = arrayxi_dice_dist,
+        LEFTARG = arrayxi,
+        RIGHTARG = arrayxi,
+        COMMUTATOR = <#>);
+
+COMMENT ON OPERATOR <#>(arrayxi, arrayxi) IS
+    'Returns the Dice distance between two arrays.';
 
 
 CREATE  FUNCTION arrayxi_euclidean_dist(arrayxi, arrayxi)
@@ -822,17 +998,17 @@ CREATE  FUNCTION arrayxi_euclidean_dist(arrayxi, arrayxi)
         LANGUAGE C IMMUTABLE STRICT;
 
 COMMENT ON FUNCTION arrayxi_euclidean_dist(arrayxi, arrayxi) IS
-    'Returns the Euclidean distance between the arrays.';
+    'Returns the normalised Euclidean distance between the arrays.';
 
 
-CREATE  OPERATOR -> (
+CREATE  OPERATOR <-> (
         PROCEDURE = arrayxi_euclidean_dist,
         LEFTARG = arrayxi,
         RIGHTARG = arrayxi,
-        COMMUTATOR = ->);
+        COMMUTATOR = <->);
 
-COMMENT ON OPERATOR ->(arrayxi, arrayxi) IS
-    'Returns the Euclidean distance between the arrays.';
+COMMENT ON OPERATOR <->(arrayxi, arrayxi) IS
+    'Returns the normalised Euclidean distance between the arrays.';
 
 
 CREATE  FUNCTION arrayxi_manhattan_dist(arrayxi, arrayxi)
@@ -841,17 +1017,119 @@ CREATE  FUNCTION arrayxi_manhattan_dist(arrayxi, arrayxi)
         LANGUAGE C IMMUTABLE STRICT;
 
 COMMENT ON FUNCTION arrayxi_manhattan_dist(arrayxi, arrayxi) IS
-    'Returns the Manhattan distance between the arrays.';
+    'Returns the normalised Manhattan distance between the arrays.';
 
 
-CREATE  OPERATOR ~> (
+CREATE  OPERATOR <~> (
         PROCEDURE = arrayxi_manhattan_dist,
         LEFTARG = arrayxi,
         RIGHTARG = arrayxi,
-        COMMUTATOR = ~>);
+        COMMUTATOR = <~>);
 
-COMMENT ON OPERATOR ~>(arrayxi, arrayxi) IS
-    'Returns the Manhattan distance between the arrays.';
+COMMENT ON OPERATOR <~>(arrayxi, arrayxi) IS
+    'Returns the normalised Manhattan distance between the arrays.';
+
+
+CREATE FUNCTION arrayxi_kulcz_dist(arrayxi, arrayxi)
+    RETURNS FLOAT
+    AS '$libdir/eigen'
+    LANGUAGE C STRICT IMMUTABLE;
+
+COMMENT ON FUNCTION arrayxi_kulcz_dist(arrayxi, arrayxi) IS
+    'Returns the Kulczynski distance between two arrays.';
+
+
+CREATE  OPERATOR <%> (
+        PROCEDURE = arrayxi_kulcz_dist,
+        LEFTARG = arrayxi,
+        RIGHTARG = arrayxi);
+
+COMMENT ON OPERATOR <%>(arrayxi, arrayxi) IS
+    'Returns the Kulczynski distance between two arrays.';
+
+
+CREATE FUNCTION arrayxi_ochiai_dist(arrayxi, arrayxi)
+    RETURNS FLOAT
+    AS '$libdir/eigen'
+    LANGUAGE C STRICT IMMUTABLE;
+
+COMMENT ON FUNCTION arrayxi_ochiai_dist(arrayxi, arrayxi) IS
+    'Returns the Ochiai distance between two arrays.';
+
+
+CREATE  OPERATOR <@> (
+        PROCEDURE = arrayxi_ochiai_dist,
+        LEFTARG = arrayxi,
+        RIGHTARG = arrayxi,
+        COMMUTATOR = <@>);
+
+COMMENT ON OPERATOR <@>(arrayxi, arrayxi) IS
+    'Returns the Ochiai distance between two arrays.';
+
+
+CREATE FUNCTION arrayxi_russell_rao_dist(arrayxi, arrayxi)
+    RETURNS FLOAT
+    AS '$libdir/eigen'
+    LANGUAGE C STRICT IMMUTABLE;
+
+COMMENT ON FUNCTION arrayxi_russell_rao_dist(arrayxi, arrayxi) IS
+    'Returns the Russell-Rao distance between two arrays.';
+
+
+CREATE  OPERATOR <^> (
+        PROCEDURE = arrayxi_russell_rao_dist,
+        LEFTARG = arrayxi,
+        RIGHTARG = arrayxi,
+        COMMUTATOR = <^>);
+
+COMMENT ON OPERATOR <^>(arrayxi, arrayxi) IS
+    'Returns the Russell-Rao distance between two arrays.';
+
+
+CREATE FUNCTION arrayxi_simpson_dist(arrayxi, arrayxi)
+    RETURNS FLOAT
+    AS '$libdir/eigen'
+    LANGUAGE C STRICT IMMUTABLE;
+
+COMMENT ON FUNCTION arrayxi_simpson_dist(arrayxi, arrayxi) IS
+    'Returns the Simpson distance between two arrays.';
+
+
+CREATE  OPERATOR <^^> (
+        PROCEDURE = arrayxi_simpson_dist,
+        LEFTARG = arrayxi,
+        RIGHTARG = arrayxi,
+        COMMUTATOR = <^^>);
+
+COMMENT ON OPERATOR <^^>(arrayxi, arrayxi) IS
+    'Returns the Simpson distance between two arrays.';
+
+
+CREATE FUNCTION arrayxi_tversky_dist(arrayxi, arrayxi)
+    RETURNS FLOAT
+    AS '$libdir/eigen'
+    LANGUAGE C STRICT IMMUTABLE;
+
+COMMENT ON FUNCTION arrayxi_tversky_dist(arrayxi, arrayxi) IS
+    'Returns the Tversky distance between two arrays. Parameters alpha and beta have to be set with the set_arrayxi_similarity_limit() function.';
+    
+
+CREATE  OPERATOR <%^> (
+        PROCEDURE = arrayxi_tversky_dist,
+        LEFTARG = arrayxi,
+        RIGHTARG = arrayxi);
+
+COMMENT ON OPERATOR <%^>(arrayxi, arrayxi) IS
+    'Returns the Tversky distance between two arrays. Parameters alpha and beta have to be set with the set_arrayxi_similarity_limit() function.';
+ 
+
+CREATE  FUNCTION arrayxi_mean_hamming_dist(arrayxi, arrayxi)
+        RETURNS FLOAT
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION arrayxi_mean_hamming_dist(arrayxi, arrayxi) IS
+    'Returns the mean Hamming distance between the arrays.';
 
 
 CREATE  FUNCTION arrayxi_fuzcavsim_global(arrayxi, arrayxi)
@@ -863,9 +1141,252 @@ COMMENT ON FUNCTION arrayxi_fuzcavsim_global(arrayxi, arrayxi) IS
     'Returns the FuzCav global similarity between the arrays.';
 
 
+----ARRAYXI BOOLEAN METRICS: COMPARES THE SIMILARITY WITH THE USER-SET LIMIT----    
+-----------------REQUIRED FOR POSTGRESQL GIST INDEX ON ARRAYXI------------------
+
+
+CREATE FUNCTION arrayxi_dice_is_above_limit(arrayxi, arrayxi)
+    RETURNS BOOLEAN
+    AS '$libdir/eigen'
+    LANGUAGE C STRICT IMMUTABLE;
+
+COMMENT ON FUNCTION arrayxi_dice_is_above_limit(arrayxi, arrayxi) IS
+    'Returns true if the Dice similarity between two arrays is above the user-set limit.';
+
+
+CREATE  OPERATOR #? (
+        PROCEDURE = arrayxi_dice_is_above_limit,
+        LEFTARG = arrayxi,
+        RIGHTARG = arrayxi,
+        RESTRICT = contsel,
+        JOIN = contjoinsel);
+
+COMMENT ON OPERATOR #?(arrayxi, arrayxi) IS
+    'Returns true if the Dice similarity between two arrays is above the user-set limit.';
+
+
+CREATE FUNCTION arrayxi_euclidean_is_above_limit(arrayxi, arrayxi)
+    RETURNS BOOLEAN
+    AS '$libdir/eigen'
+    LANGUAGE C STRICT IMMUTABLE;
+
+COMMENT ON FUNCTION arrayxi_euclidean_is_above_limit(arrayxi, arrayxi) IS
+    'Returns true if the Euclidean similarity between two arrays is above the user-set limit.';
+
+
+CREATE  OPERATOR ->? (
+        PROCEDURE = arrayxi_euclidean_is_above_limit,
+        LEFTARG = arrayxi,
+        RIGHTARG = arrayxi,
+        RESTRICT = contsel,
+        JOIN = contjoinsel);
+
+COMMENT ON OPERATOR ->?(arrayxi, arrayxi) IS
+    'Returns true if the Euclidean similarity between two arrays is above the user-set limit.';
+
+
+CREATE FUNCTION arrayxi_kulcz_is_above_limit(arrayxi, arrayxi)
+    RETURNS BOOLEAN
+    AS '$libdir/eigen'
+    LANGUAGE C STRICT IMMUTABLE;
+
+COMMENT ON FUNCTION arrayxi_kulcz_is_above_limit(arrayxi, arrayxi) IS
+    'Returns true if the Kulczynski similarity between two arrays is above the user-set limit.';
+
+
+CREATE  OPERATOR %? (
+        PROCEDURE = arrayxi_kulcz_is_above_limit,
+        LEFTARG = arrayxi,
+        RIGHTARG = arrayxi,
+        RESTRICT = contsel,
+        JOIN = contjoinsel);
+
+COMMENT ON OPERATOR %?(arrayxi, arrayxi) IS
+    'Returns true if the Kulczynski similarity between two arrays is above the user-set limit.';
+
+
+CREATE FUNCTION arrayxi_manhattan_is_above_limit(arrayxi, arrayxi)
+    RETURNS BOOLEAN
+    AS '$libdir/eigen'
+    LANGUAGE C STRICT IMMUTABLE;
+
+COMMENT ON FUNCTION arrayxi_manhattan_is_above_limit(arrayxi, arrayxi) IS
+    'Returns true if the Manhattan similarity between two arrays is above the user-set limit.';
+
+
+CREATE  OPERATOR ~>? (
+        PROCEDURE = arrayxi_manhattan_is_above_limit,
+        LEFTARG = arrayxi,
+        RIGHTARG = arrayxi,
+        RESTRICT = contsel,
+        JOIN = contjoinsel);
+
+COMMENT ON OPERATOR ~>?(arrayxi, arrayxi) IS
+    'Returns true if the Manhattan similarity between two arrays is above the user-set limit.';
+
+
+CREATE FUNCTION arrayxi_ochiai_is_above_limit(arrayxi, arrayxi)
+    RETURNS BOOLEAN
+    AS '$libdir/eigen'
+    LANGUAGE C STRICT IMMUTABLE;
+
+COMMENT ON FUNCTION arrayxi_ochiai_is_above_limit(arrayxi, arrayxi) IS
+    'Returns true if the Ochiai similarity between two arrays is above the user-set limit.';
+
+
+CREATE  OPERATOR @? (
+        PROCEDURE = arrayxi_ochiai_is_above_limit,
+        LEFTARG = arrayxi,
+        RIGHTARG = arrayxi,
+        RESTRICT = contsel,
+        JOIN = contjoinsel);
+
+COMMENT ON OPERATOR @?(arrayxi, arrayxi) IS
+    'Returns true if the Ochiai similarity between two arrays is above the user-set limit.';
+
+
+CREATE FUNCTION arrayxi_russell_rao_is_above_limit(arrayxi, arrayxi)
+    RETURNS BOOLEAN
+    AS '$libdir/eigen'
+    LANGUAGE C STRICT IMMUTABLE;
+
+COMMENT ON FUNCTION arrayxi_russell_rao_is_above_limit(arrayxi, arrayxi) IS
+    'Returns true if the Russell-Rao similarity between two arrays is above the user-set limit.';
+
+
+CREATE  OPERATOR ^? (
+        PROCEDURE = arrayxi_russell_rao_is_above_limit,
+        LEFTARG = arrayxi,
+        RIGHTARG = arrayxi,
+        RESTRICT = contsel,
+        JOIN = contjoinsel);
+
+COMMENT ON OPERATOR ^?(arrayxi, arrayxi) IS
+    'Returns true if the Russell-Rao similarity between two arrays is above the user-set limit.';
+
+
+CREATE FUNCTION arrayxi_simpson_is_above_limit(arrayxi, arrayxi)
+    RETURNS BOOLEAN
+    AS '$libdir/eigen'
+    LANGUAGE C STRICT IMMUTABLE;
+
+COMMENT ON FUNCTION arrayxi_simpson_is_above_limit(arrayxi, arrayxi) IS
+    'Returns true if the Simpson similarity between two arrays is above the user-set limit.';
+
+
+CREATE  OPERATOR ^^? (
+        PROCEDURE = arrayxi_simpson_is_above_limit,
+        LEFTARG = arrayxi,
+        RIGHTARG = arrayxi,
+        RESTRICT = contsel,
+        JOIN = contjoinsel);
+
+COMMENT ON OPERATOR ^^?(arrayxi, arrayxi) IS
+    'Returns true if the Simpson similarity between two arrays is above the user-set limit.';
+    
+
+CREATE FUNCTION arrayxi_tversky_is_above_limit(arrayxi, arrayxi)
+    RETURNS BOOLEAN
+    AS '$libdir/eigen'
+    LANGUAGE C STRICT IMMUTABLE;
+
+COMMENT ON FUNCTION arrayxi_tversky_is_above_limit(arrayxi, arrayxi) IS
+    'Returns true if the Tversky similarity between two arrays is above the user-set limit.';
+
+
+CREATE  OPERATOR %^? (
+        PROCEDURE = arrayxi_tversky_is_above_limit,
+        LEFTARG = arrayxi,
+        RIGHTARG = arrayxi,
+        RESTRICT = contsel,
+        JOIN = contjoinsel);
+
+COMMENT ON OPERATOR %^?(arrayxi, arrayxi) IS
+    'Returns true if the Tversky similarity between two arrays is above the user-set limit.';
+
+
+--------POSTGRESQL ARRAYXI DATA TYPE GIST FUNCTIONS AND OPERATOR CLASS----------
+
+
+CREATE  FUNCTION gist_arrayxi_consistent(internal, arrayxi, smallint, oid, internal)
+        RETURNS bool
+        AS '$libdir/eigen'
+        LANGUAGE C STRICT;
+
+
+CREATE  FUNCTION gist_arrayxi_union(internal, internal)
+        RETURNS internal
+        AS '$libdir/eigen'
+        LANGUAGE C STRICT;
+
+
+CREATE  FUNCTION gist_arrayxi_compress(internal)
+        RETURNS internal
+        AS '$libdir/eigen'
+        LANGUAGE C STRICT;
+
+
+CREATE  FUNCTION gist_arrayxi_decompress(internal)
+        RETURNS internal
+        AS '$libdir/eigen'
+        LANGUAGE C STRICT;
+
+
+CREATE  FUNCTION gist_arrayxi_penalty(internal, internal, internal)
+        RETURNS internal
+        AS '$libdir/eigen'
+        LANGUAGE C STRICT;
+
+
+CREATE  FUNCTION gist_arrayxi_picksplit(internal, internal)
+        RETURNS internal
+        AS '$libdir/eigen'
+        LANGUAGE C STRICT;
+
+
+CREATE  FUNCTION gist_arrayxi_same(internal, internal, internal)
+        RETURNS internal
+        AS '$libdir/eigen'
+        LANGUAGE C STRICT;
+        
+        
+CREATE  FUNCTION gist_arrayxi_distance(internal, arrayxi, smallint, oid)
+        RETURNS float8
+        AS '$libdir/eigen'
+        LANGUAGE C STRICT;
+
+
+CREATE  OPERATOR CLASS arrayxi_gist_ops
+DEFAULT FOR TYPE arrayxi USING gist AS
+        OPERATOR  1  #?   (arrayxi,arrayxi), -- DICE SIMILARITY ABOVE LIMIT?
+        OPERATOR  2  ->?  (arrayxi,arrayxi), -- EUCLIDEAN ...
+        OPERATOR  3  %?   (arrayxi,arrayxi), -- KULCZ ...
+        OPERATOR  4  ~>?  (arrayxi,arrayxi), -- MANHATTAN ...
+        OPERATOR  5  @?   (arrayxi,arrayxi), -- OCHIAI ..
+        OPERATOR  6  ^?   (arrayxi,arrayxi), -- RUSSELL RAO ...
+        OPERATOR  7  ^^?  (arrayxi,arrayxi), -- SIMPSON ...
+        OPERATOR  8  %^?  (arrayxi,arrayxi), -- TVERSKY ...
+        OPERATOR  9  <#>  FOR ORDER BY pg_catalog.float_ops, -- DICE KNN-GIST
+        OPERATOR 10  <->  FOR ORDER BY pg_catalog.float_ops, -- EUCLIDEAN KNN-GIST
+        OPERATOR 11  <%>  FOR ORDER BY pg_catalog.float_ops, -- KULCZ KNN-GIST
+        OPERATOR 12  <~>  FOR ORDER BY pg_catalog.float_ops, -- MANHATTAN KNN-GIST
+        OPERATOR 13  <@>  FOR ORDER BY pg_catalog.float_ops, -- OCHIAI KNN-GIST
+        OPERATOR 14  <^>  FOR ORDER BY pg_catalog.float_ops, -- RUSSELL-RAO KNN-GIST
+        OPERATOR 15  <^^> FOR ORDER BY pg_catalog.float_ops, -- SIMPSON KNN-GIST
+        OPERATOR 16  <%^> FOR ORDER BY pg_catalog.float_ops, -- TVERSKY KNN-GIST
+        FUNCTION  1  gist_arrayxi_consistent(internal, arrayxi, smallint, oid, internal),
+        FUNCTION  2  gist_arrayxi_union(internal, internal),
+        FUNCTION  3  gist_arrayxi_compress(internal),
+        FUNCTION  4  gist_arrayxi_decompress(internal),
+        FUNCTION  5  gist_arrayxi_penalty(internal, internal, internal),
+        FUNCTION  6  gist_arrayxi_picksplit(internal, internal),
+        FUNCTION  7  gist_arrayxi_same(internal, internal, internal),
+        FUNCTION  8  (arrayxi, arrayxi) gist_arrayxi_distance(internal, arrayxi, smallint, oid);
+
+
 
 --------------------------------------------------------------------------------
------------------------- ARRAYXI: ARRAY OF DOUBLES -----------------------------
+------------------------ ARRAYXD: ARRAY OF DOUBLES -----------------------------
 --------------------------------------------------------------------------------
 
 
