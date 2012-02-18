@@ -1,158 +1,166 @@
-#include <Eigen/Dense>
+#include "eigen.h"
 #include "vector3d.h"
 
 using namespace Eigen;
 
-// COPY EIGEN ALIGNED VECTOR TO POSTGRESQL VECTOR STRUCT
-void vector3DCopy(Vector3d &av, pgvector3d *v)
+// CONVERTS A POSTGRESQL ARRAY INTO AN EIGEN VECTOR3D
+RowVector3d arraytype_to_vector3d(ArrayType *array)
 {
-    v->x = av[0];
-    v->y = av[1];
-    v->z = av[2];
+    // MAP POSTGRESQL ARRAY TO MATRIX
+    Map<RowVector3d> vector3d((double *) ARR_DATA_PTR(array), 3);
+    
+    return vector3d;
 }
 
-// COMPARISON OF VECTORS
-int vector3DCmp(pgvector3d *u, pgvector3d *v)
+// // HORIZONTALLY STACKS TWO MATRICES
+// extern "C"
+// ArrayType *matrixxd_to_vector3d(ArrayType *array)
+// {
+//     int *dmns = ARR_DIMS(array);
+//     int *lbds = ARR_LBOUND(array);
+//     
+//     // EXTRACT THE MATRIX DIMENSIONS FROM THE POSTGRESQL ARRAYTYPE
+//     int rows = arraytype_num_rows(dmns, lbds);
+//     int cols = arraytype_num_cols(dmns, lbds);
+//     
+//     if (rows != 1 || cols != 3)
+//     {
+//         ereport(ERROR, (errcode(ERRCODE_DATA_EXCEPTION), 
+//                         errmsg("cannot cast matrixxd to vector3d: incompatible matrix dimensions (%i,%i).", rows, cols)));
+//     }
+//     
+//     return densebase_to_float8_arraytype(array);
+// }
+
+
+///////////////////////////VECTOR GENERATION METHODS////////////////////////////
+
+
+// RETURNS VECTOR OF THE GIVEN SIZE WITH RANDOM COEFFICIENTS
+extern "C"
+ArrayType *Vector3dRandom()
 {
-    Vector3d au(u->x, u->y, u->z);
-    Vector3d av(v->x, v->y, v->z);
-    
-    // CHECK EQUALITY BY DISTANCE
-    if (!((au-av).norm() > 0)) return 0;    
-    
-    // FIRST VECTOR IS SHORTER THAN SECOND
-    else if (au.norm() < av.norm()) return -1;
-    
-    // SECOND VECTOR IS LARGER
-    return 1;
+    // INITIALIZE ARRAY ACCORDING TO THE GIVEN SIZE
+    RowVector3d vector3d = RowVector3d::Random();
+
+    return densebase_to_float8_arraytype(vector3d);
 }
 
-// CREATE THE UNION OF TWO VECTORS (REQUIRED FOR GIST INDEX)
-void vector3DUnion(pgvector3d *u, pgvector3d *v, pgvector3d *t)
+// RETURNS VECTOR OF THE GIVEN SIZE WITH RANDOM COEFFICIENTS
+extern "C"
+ArrayType *Vector3dConstant(double value)
 {
-    Vector3d au(u->x, u->y, u->z);
-    Vector3d av(v->x, v->y, v->z);
-    
-    // GET AVERAGE COORDINATES
-    Vector3d at = (au + av) / 2;
-    
-    // COPY TO POSTGRES VECTOR3D STRUCT
-    vector3DCopy(at,t);
+    // INITIALIZE ARRAY ACCORDING TO THE GIVEN SIZE
+    RowVector3d vector3d = RowVector3d::Constant(value);
+
+    return densebase_to_float8_arraytype(vector3d);
 }
 
-void vector3DAdd(pgvector3d *u, pgvector3d *v, pgvector3d *t)
+//////////////////////////////VECTOR ARITHMETIC/////////////////////////////////
+
+
+//
+extern "C"
+ArrayType *Vector3dAdd(ArrayType *a1, ArrayType *a2)
 {
-    Vector3d au(u->x, u->y, u->z);
-    Vector3d av(v->x, v->y, v->z);
+    RowVector3d v1 = arraytype_to_vector3d(a1);
+    RowVector3d v2 = arraytype_to_vector3d(a2);
     
-    // DO ADDITION
-    Vector3d at = au + av;
-    
-    // COPY TO POSTGRES VECTOR3D STRUCT
-    vector3DCopy(at,t);
+    return densebase_to_float8_arraytype(v1 + v2);
 }
 
-void vector3DSub(pgvector3d *u, pgvector3d *v, pgvector3d *t)
+//
+extern "C"
+ArrayType *Vector3dSubtract(ArrayType *a1, ArrayType *a2)
 {
-    Vector3d au(u->x, u->y, u->z);
-    Vector3d av(v->x, v->y, v->z);
+    RowVector3d v1 = arraytype_to_vector3d(a1);
+    RowVector3d v2 = arraytype_to_vector3d(a2);
     
-    // DO SUBTRACTION
-    Vector3d at = au - av;
-    
-    // COPY TO POSTGRES VECTOR3D STRUCT
-    vector3DCopy(at,t);
+    return densebase_to_float8_arraytype(v1 - v2);
 }
 
-// SCALAR MULTIPLICATION OF VECTOR
-void vector3DMul(pgvector3d *u, pgvector3d *v, double scalar)
+//
+extern "C"
+ArrayType *Vector3dScalarProduct(ArrayType *array, double scalar)
 {
-    Vector3d au(u->x, u->y, u->z);
+    RowVector3d vector3d = arraytype_to_vector3d(array);
     
-    // MULTIPLY INLINE WITH SCALAR
-    au *= scalar;
-    
-    // COPY TO POSTGRES VECTOR3D STRUCT
-    vector3DCopy(au,v);
+    return densebase_to_float8_arraytype(vector3d * scalar);
 }
 
-// SCALAR DIVISION OF VECTOR
-void vector3DDiv(pgvector3d *u, pgvector3d *v, double scalar)
+//
+extern "C"
+ArrayType *Vector3dScalarDivision(ArrayType *array, double scalar)
 {
-    Vector3d au(u->x, u->y, u->z);
+    RowVector3d vector3d = arraytype_to_vector3d(array);
     
-    // MULTIPLY INLINE WITH SCALAR
-    au /= scalar;
-    
-    // COPY TO POSTGRES VECTOR3D STRUCT
-    vector3DCopy(au,v);
+    return densebase_to_float8_arraytype(vector3d / scalar);
 }
 
-
-// DOT PRODUCT BETWEEN VECTORS
-double vector3DDot(pgvector3d *u, pgvector3d *v)
+// RETURNS THE DOT PRODUCT
+extern "C"
+double Vector3dDot(ArrayType *a1, ArrayType *a2)
 {
-    Vector3d au(u->x, u->y, u->z);
-    Vector3d av(v->x, v->y, v->z);
+    RowVector3d v1 = arraytype_to_vector3d(a1);
+    RowVector3d v2 = arraytype_to_vector3d(a2);
     
-    return au.dot(av);
+    return v1.dot(v2);
 }
 
-// CROSS PRODUCT BETWEEN VECTORS
-void vector3DCross(pgvector3d *u, pgvector3d *v, pgvector3d *cp)
+// RETURNS THE CROSS PRODUCT
+extern "C"
+ArrayType *Vector3dCross(ArrayType *a1, ArrayType *a2)
 {
-    Vector3d au(u->x, u->y, u->z);
-    Vector3d av(v->x, v->y, v->z);
+    RowVector3d v1 = arraytype_to_vector3d(a1);
+    RowVector3d v2 = arraytype_to_vector3d(a2);
     
-    Vector3d acp = au.cross(av);
-    
-    // COPY TO POSTGRES VECTOR3D STRUCT
-    vector3DCopy(acp,cp);
+    return densebase_to_float8_arraytype(v1 - v2);
 }
 
-// CALCULATES THE NORM/LENGTH OF THE VECTOR
-double vector3DNorm(pgvector3d *v)
+// RETURNS THE VECTOR NORM/LENGTH
+extern "C"
+double Vector3dNorm(ArrayType *array)
 {
-    Vector3d av(v->x, v->y, v->z);
+    RowVector3d vector3d = arraytype_to_vector3d(array);
     
-    return av.norm();
+    return vector3d.norm();
 }
 
-// NORMALIZE VECTOR
-void vector3DNormalize(pgvector3d *u, pgvector3d *v)
+// RETURNS THE NORMALIZED VECTOR
+extern "C"
+ArrayType *Vector3dNormalized(ArrayType *array)
 {
-    Vector3d au(u->x, u->y, u->z);
+    RowVector3d vector3d = arraytype_to_vector3d(array);
     
-    // NORMALIZE VECTOR INLINE
-    au.normalize();
-    
-    // COPY TO POSTGRES VECTOR3D STRUCT
-    vector3DCopy(au,v);
+    return densebase_to_float8_arraytype(vector3d.normalized());
 }
 
-// EUCLIDEAN DISTANCE BETWEEN VECTORS
-double vector3DDistance(pgvector3d *u, pgvector3d *v)
+// RETURNS THE DISTANCE BETWEEN TWO VECTORS
+extern "C"
+double Vector3dDistance(ArrayType *a1, ArrayType *a2)
 {
-    Vector3d au(u->x, u->y, u->z);
-    Vector3d av(v->x, v->y, v->z);
+    RowVector3d v1 = arraytype_to_vector3d(a1);
+    RowVector3d v2 = arraytype_to_vector3d(a2);
     
-    return (au-av).norm();
+    return (v1-v2).norm();
 }
 
-// ANGLE BETWEEN TWO VECTORS
-double vector3DAngle(pgvector3d *u, pgvector3d *v)
+// RETURNS THE ANGLE BETWEEN TWO VECTORS
+extern "C"
+double Vector3dAngle(ArrayType *a1, ArrayType *a2)
 {
-    Vector3d au(u->x, u->y, u->z);
-    Vector3d av(v->x, v->y, v->z);
+    RowVector3d v1 = arraytype_to_vector3d(a1);
+    RowVector3d v2 = arraytype_to_vector3d(a2);
     
-    return acos(au.dot(av) / (au.norm() * av.norm()));
+    return acos(v1.dot(v2) / (v1.norm() * v2.norm()));
 }
 
-// ABSOLUTE ANGLE BETWEEN TWO VECTORS -- NOT WORKING
-double vector3DAbsAngle(pgvector3d *u, pgvector3d *v)
+// RETURNS THE ABSOLUTE ANGLE BETWEEN TWO VECTORS
+extern "C"
+double Vector3dAbsAngle(ArrayType *a1, ArrayType *a2)
 {
-    Vector3d au(u->x, u->y, u->z);
-    Vector3d av(v->x, v->y, v->z);
+    RowVector3d v1 = arraytype_to_vector3d(a1);
+    RowVector3d v2 = arraytype_to_vector3d(a2);
     
-    return acos(fabs(au.dot(av)) / (au.norm() * av.norm()));
+    return acos(fabs(v1.dot(v2) / (v1.norm() * v2.norm())));
 }

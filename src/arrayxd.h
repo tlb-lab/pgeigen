@@ -22,9 +22,9 @@ extern "C"
     ArrayType *ArrayXdMul(ArrayType *a1, ArrayType *a2);
     ArrayType *ArrayXdDiv(ArrayType *a1, ArrayType *a2);
 
-    ArrayType *ArrayXdAddScalar(ArrayType *array, int scalar);
-    ArrayType *ArrayXdSubScalar(ArrayType *array, int scalar);
-    ArrayType *ArrayXdMulScalar(ArrayType *array, int scalar);
+    ArrayType *ArrayXdAddScalar(ArrayType *array, double scalar);
+    ArrayType *ArrayXdSubScalar(ArrayType *array, double scalar);
+    ArrayType *ArrayXdMulScalar(ArrayType *array, double scalar);
 
     // ARRAY CREATION
     ArrayType *ArrayXdRandom(int size);

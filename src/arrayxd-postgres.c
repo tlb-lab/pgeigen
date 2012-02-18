@@ -1,6 +1,20 @@
 #include "arrayxd.h"
 #include "fmgr.h"
 
+#ifdef PG_MODULE_MAGIC
+PG_MODULE_MAGIC;
+#endif
+
+//
+PG_FUNCTION_INFO_V1(array_has_nulls);
+Datum array_has_nulls(PG_FUNCTION_ARGS)
+{
+    ArrayType  *array = PG_GETARG_ARRAYTYPE_P(0);
+
+    PG_RETURN_BOOL(ArrayGetNItems(ARR_NDIM(array), ARR_DIMS(array)) == 0);
+}
+
+
 /*
  OPERATIONS ON SINGLE ARRAYS
 */
@@ -114,7 +128,7 @@ PG_FUNCTION_INFO_V1(arrayxd_add_scalar);
 Datum arrayxd_add_scalar(PG_FUNCTION_ARGS)
 {
     ArrayType *array = PG_GETARG_ARRAYTYPE_P(0);
-    int        scalar = PG_GETARG_INT32(1);
+    double     scalar = PG_GETARG_FLOAT8(1);
 
     PG_RETURN_ARRAYTYPE_P(ArrayXdAddScalar(array,scalar));
 }
@@ -124,7 +138,7 @@ PG_FUNCTION_INFO_V1(arrayxd_sub_scalar);
 Datum arrayxd_sub_scalar(PG_FUNCTION_ARGS)
 {
     ArrayType *array = PG_GETARG_ARRAYTYPE_P(0);
-    int        scalar = PG_GETARG_INT32(1);
+    double     scalar = PG_GETARG_FLOAT8(1);
 
     PG_RETURN_ARRAYTYPE_P(ArrayXdSubScalar(array,scalar));
 }
@@ -134,7 +148,7 @@ PG_FUNCTION_INFO_V1(arrayxd_mul_scalar);
 Datum arrayxd_mul_scalar(PG_FUNCTION_ARGS)
 {
     ArrayType *array = PG_GETARG_ARRAYTYPE_P(0);
-    int        scalar = PG_GETARG_INT32(1);
+    double     scalar = PG_GETARG_FLOAT8(1);
 
     PG_RETURN_ARRAYTYPE_P(ArrayXdMulScalar(array,scalar));
 }

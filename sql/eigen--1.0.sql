@@ -19,168 +19,31 @@ COMMENT ON FUNCTION array_has_nulls(anyarray) IS 'Returns true if the array cont
 
 
 
--- SHELL TYPE
-CREATE  TYPE vector3d;
+CREATE  DOMAIN vector3d AS _float8
+        CONSTRAINT onedimensional CHECK(ARRAY_NDIMS(VALUE) = 1)
+        CONSTRAINT nonulls CHECK(array_has_nulls(VALUE) = FALSE);
 
-CREATE  FUNCTION vector3d_in(cstring)
+COMMENT ON DOMAIN vector3d IS 
+    'three-dimensional vector of double precision floats.';
+
+
+CREATE  FUNCTION vector3d_constant(value DOUBLE PRECISION)
         RETURNS vector3d
         AS '$libdir/eigen'
-        LANGUAGE C IMMUTABLE STRICT;
+        LANGUAGE C VOLATILE STRICT;
 
-CREATE  FUNCTION vector3d_out(vector3d)
-        RETURNS cstring
-        AS '$libdir/eigen'
-        LANGUAGE C IMMUTABLE STRICT;
+COMMENT ON FUNCTION vector3d_constant(DOUBLE PRECISION) IS
+    'Returns a vector with constant elements.';
 
-CREATE  FUNCTION vector3d_recv(internal)
+
+CREATE  FUNCTION vector3d_random()
         RETURNS vector3d
         AS '$libdir/eigen'
-        LANGUAGE C IMMUTABLE STRICT;
+        LANGUAGE C VOLATILE STRICT;
 
-CREATE  FUNCTION vector3d_send(vector3d)
-        RETURNS BYTEA
-        AS '$libdir/eigen'
-        LANGUAGE C IMMUTABLE STRICT;
+COMMENT ON FUNCTION vector3d_random() IS
+    'Returns a vector with random elements.';
 
-CREATE  TYPE vector3d (
-        INTERNALLENGTH = 24,
-        INPUT = vector3d_in,
-        OUTPUT = vector3d_out,
-        receive = vector3d_recv,
-        send = vector3d_send,
-        ALIGNMENT = double,
-        ELEMENT = float8);
-
-COMMENT ON TYPE vector3d IS
-    'Three-dimensional vector that supports a variety of linear algebra operations.';
-
-CREATE  FUNCTION vector3d_cmp(vector3d, vector3d)
-        RETURNS INTEGER
-        AS '$libdir/eigen'
-        LANGUAGE C IMMUTABLE STRICT;
-
-COMMENT ON FUNCTION vector3d_cmp(vector3d, vector3d) IS
-    'Compares two vectors.';
-
-CREATE  FUNCTION vector3d_lt(vector3d, vector3d)
-        RETURNS BOOLEAN
-        AS '$libdir/eigen'
-        LANGUAGE C IMMUTABLE STRICT;
-
-COMMENT ON FUNCTION vector3d_lt(vector3d, vector3d) IS
-    'Returns true if the first vector is shorter than the second.';
-
-CREATE  OPERATOR < (
-        PROCEDURE = vector3d_lt,
-        LEFTARG = vector3d,
-        RIGHTARG = vector3d,
-        COMMUTATOR = >,
-        NEGATOR = >=,
-        RESTRICT = scalarltsel,
-        JOIN = scalarltjoinsel);
-
-COMMENT ON OPERATOR <(vector3d, vector3d) IS
-    'Returns true if the first vector is shorter than the second.';
-
-CREATE  FUNCTION vector3d_le(vector3d, vector3d)
-        RETURNS BOOLEAN
-        AS '$libdir/eigen'
-        LANGUAGE C IMMUTABLE STRICT;
-
-COMMENT ON FUNCTION vector3d_le(vector3d, vector3d) IS
-    'Returns true if the first vector is shorter than or equal to the second.';
-
-CREATE  OPERATOR <= (
-        PROCEDURE = vector3d_le,
-        LEFTARG = vector3d,
-        RIGHTARG = vector3d,
-        COMMUTATOR = >=,
-        NEGATOR = >,
-        RESTRICT = scalarltsel,
-        JOIN = scalarltjoinsel);
-
-COMMENT ON OPERATOR <=(vector3d, vector3d) IS
-    'Returns true if the first vector is shorter than or equal to the second.';
-
-CREATE  FUNCTION vector3d_eq(vector3d, vector3d)
-        RETURNS BOOLEAN
-        AS '$libdir/eigen'
-        LANGUAGE C IMMUTABLE STRICT;
-
-COMMENT ON FUNCTION vector3d_eq(vector3d, vector3d) IS
-    'Returns true if the vectors are identical, i.e. their distance is 0.';
-
-CREATE  OPERATOR = (
-        PROCEDURE = vector3d_eq,
-        LEFTARG = vector3d,
-        RIGHTARG = vector3d,
-        COMMUTATOR = =,
-        NEGATOR = !=,
-        RESTRICT = eqsel,
-        JOIN = eqjoinsel);
-
-COMMENT ON OPERATOR =(vector3d, vector3d) IS
-    'Returns true if the vectors are identical, i.e. their distance is 0.';
-
-CREATE  FUNCTION vector3d_ge(vector3d, vector3d)
-        RETURNS BOOLEAN
-        AS '$libdir/eigen'
-        LANGUAGE C IMMUTABLE STRICT;
-
-COMMENT ON FUNCTION vector3d_ge(vector3d, vector3d) IS
-    'Returns true if the first vector is longer than or equal to the second.';
-
-CREATE  OPERATOR >= (
-        PROCEDURE = vector3d_ge,
-        LEFTARG = vector3d,
-        RIGHTARG = vector3d,
-        COMMUTATOR = <=,
-        NEGATOR = <,
-        RESTRICT = scalargtsel,
-        JOIN = scalargtjoinsel);
-
-COMMENT ON OPERATOR >=(vector3d, vector3d) IS
-    'Returns true if the first vector is shorter than or equal to the second.';
-
-CREATE  FUNCTION vector3d_gt(vector3d, vector3d)
-        RETURNS BOOLEAN
-        AS '$libdir/eigen'
-        LANGUAGE C IMMUTABLE STRICT;
-
-COMMENT ON FUNCTION vector3d_gt(vector3d, vector3d) IS
-    'Returns true if the first vector is longer than or equal to the second.';
-
-CREATE  OPERATOR > (
-        PROCEDURE = vector3d_gt,
-        LEFTARG = vector3d,
-        RIGHTARG = vector3d,
-        COMMUTATOR = <,
-        NEGATOR = <=,
-        RESTRICT = scalargtsel,
-        JOIN = scalargtjoinsel);
-
-COMMENT ON OPERATOR >(vector3d, vector3d) IS
-    'Returns true if the first vector is longer than the second.';
-
-CREATE  FUNCTION vector3d_ne(vector3d, vector3d)
-        RETURNS BOOLEAN
-        AS '$libdir/eigen'
-        LANGUAGE C IMMUTABLE STRICT;
-
-COMMENT ON FUNCTION vector3d_ne(vector3d, vector3d) IS
-    'Returns true if the vectors are distinct.';
-
-CREATE  OPERATOR != (
-        PROCEDURE = vector3d_ne,
-        LEFTARG = vector3d,
-        RIGHTARG = vector3d,
-        COMMUTATOR = !=,
-        NEGATOR = =,
-        RESTRICT = neqsel,
-        JOIN = neqjoinsel);
-
-COMMENT ON OPERATOR !=(vector3d, vector3d) IS
-    'Returns true if the vectors are distinct.';
 
 CREATE  FUNCTION vector3d_add(vector3d, vector3d)
         RETURNS vector3d
@@ -189,6 +52,7 @@ CREATE  FUNCTION vector3d_add(vector3d, vector3d)
 
 COMMENT ON FUNCTION vector3d_add(vector3d, vector3d) IS
     'Adds two vectors together.';
+
 
 CREATE  OPERATOR + (
         PROCEDURE = vector3d_add,
@@ -200,16 +64,17 @@ COMMENT ON OPERATOR +(vector3d, vector3d) IS
     'Adds two vectors together.';
 
 
-CREATE  FUNCTION vector3d_sub(vector3d, vector3d)
+CREATE  FUNCTION vector3d_subtract(vector3d, vector3d)
         RETURNS vector3d
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION vector3d_sub(vector3d, vector3d) IS
+COMMENT ON FUNCTION vector3d_subtract(vector3d, vector3d) IS
     'Subtracts one vector from the other.';
 
+
 CREATE  OPERATOR - (
-        PROCEDURE = vector3d_sub,
+        PROCEDURE = vector3d_subtract,
         LEFTARG = vector3d,
         RIGHTARG = vector3d);
 
@@ -217,47 +82,50 @@ COMMENT ON OPERATOR -(vector3d, vector3d) IS
     'Subtracts one vector from the other.';
 
 
-CREATE  FUNCTION vector3d_div(vector3d, FLOAT)
+CREATE  FUNCTION vector3d_scalar_division(vector3d, DOUBLE PRECISION)
         RETURNS vector3d
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION vector3d_div(vector3d, FLOAT) IS
+COMMENT ON FUNCTION vector3d_scalar_division(vector3d, DOUBLE PRECISION) IS
     'Divides a vector by a scalar.';
+
 
 CREATE  OPERATOR / (
-        PROCEDURE = vector3d_div,
+        PROCEDURE = vector3d_scalar_division,
         LEFTARG = vector3d,
-        RIGHTARG = FLOAT);
+        RIGHTARG = DOUBLE PRECISION);
 
-COMMENT ON OPERATOR /(vector3d, FLOAT) IS
+COMMENT ON OPERATOR /(vector3d, DOUBLE PRECISION) IS
     'Divides a vector by a scalar.';
 
 
-CREATE  FUNCTION vector3d_mul(vector3d, FLOAT)
+CREATE  FUNCTION vector3d_scalar_product(vector3d, DOUBLE PRECISION)
         RETURNS vector3d
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION vector3d_mul(vector3d, FLOAT) IS
+COMMENT ON FUNCTION vector3d_scalar_product(vector3d, DOUBLE PRECISION) IS
     'Multiplication of a vector with scalar.';
 
-CREATE  OPERATOR * (
-        PROCEDURE = vector3d_mul,
-        LEFTARG = vector3d,
-        RIGHTARG = FLOAT);
 
-COMMENT ON OPERATOR *(vector3d, FLOAT) IS
+CREATE  OPERATOR * (
+        PROCEDURE = vector3d_scalar_product,
+        LEFTARG = vector3d,
+        RIGHTARG = DOUBLE PRECISION);
+
+COMMENT ON OPERATOR *(vector3d, DOUBLE PRECISION) IS
     'Multiplication of a vector with scalar.';
 
 
 CREATE  FUNCTION vector3d_dot(vector3d, vector3d)
-        RETURNS FLOAT
+        RETURNS DOUBLE PRECISION
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
 COMMENT ON FUNCTION vector3d_dot(vector3d, vector3d) IS
     'Dot product between two vectors.';
+
 
 CREATE  OPERATOR * (
         PROCEDURE = vector3d_dot,
@@ -265,17 +133,18 @@ CREATE  OPERATOR * (
         RIGHTARG = vector3d,
         COMMUTATOR = *);
 
-COMMENT ON OPERATOR *(vector3d, vector3d) IS
+COMMENT ON OPERATOR * (vector3d, vector3d) IS
     'Dot product between two vectors.';
 
 
 CREATE  FUNCTION vector3d_norm(vector3d)
-        RETURNS FLOAT
+        RETURNS DOUBLE PRECISION
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
 COMMENT ON FUNCTION vector3d_norm(vector3d) IS
     'Length/Norm of the vector.';
+
 
 CREATE  OPERATOR | (
         PROCEDURE = vector3d_norm,
@@ -286,20 +155,20 @@ COMMENT ON OPERATOR |(NONE, vector3d) IS
     'Length/Norm of the vector.';
 
 
-CREATE  FUNCTION vector3d_normalize(vector3d)
+CREATE  FUNCTION vector3d_normalized(vector3d)
         RETURNS vector3d
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION vector3d_normalize(vector3d) IS
+COMMENT ON FUNCTION vector3d_normalized(vector3d) IS
     'Normalizes vector.';
 
 CREATE  OPERATOR ^ (
-        PROCEDURE = vector3d_normalize,
+        PROCEDURE = vector3d_normalized,
         RIGHTARG = vector3d
         );
 
-COMMENT ON FUNCTION vector3d_normalize(vector3d) IS
+COMMENT ON FUNCTION vector3d_normalized(vector3d) IS
     'Normalizes vector.';
 
 
@@ -310,6 +179,7 @@ CREATE  FUNCTION vector3d_cross(vector3d, vector3d)
 
 COMMENT ON FUNCTION vector3d_cross(vector3d, vector3d) IS
     'Cross product between two vectors.';
+
 
 CREATE  OPERATOR # (
         PROCEDURE = vector3d_cross,
@@ -322,12 +192,13 @@ COMMENT ON OPERATOR #(vector3d, vector3d) IS
 
 
 CREATE  FUNCTION vector3d_distance(vector3d, vector3d)
-        RETURNS FLOAT
+        RETURNS DOUBLE PRECISION
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
 COMMENT ON FUNCTION vector3d_distance(vector3d, vector3d) IS
     'Euclidean distance between two vectors.';
+
 
 CREATE  OPERATOR -> (
         PROCEDURE = vector3d_distance,
@@ -340,12 +211,13 @@ COMMENT ON OPERATOR ->(vector3d, vector3d) IS
 
 
 CREATE  FUNCTION vector3d_angle(vector3d, vector3d)
-        RETURNS FLOAT
+        RETURNS DOUBLE PRECISION
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
 COMMENT ON FUNCTION vector3d_angle(vector3d, vector3d) IS
     'Angle between two vectors in radians.';
+
 
 CREATE  OPERATOR @ (
         PROCEDURE = vector3d_angle,
@@ -358,12 +230,13 @@ COMMENT ON OPERATOR @(vector3d, vector3d) IS
 
 
 CREATE  FUNCTION vector3d_abs_angle(vector3d, vector3d)
-        RETURNS FLOAT
+        RETURNS DOUBLE PRECISION
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
 COMMENT ON FUNCTION vector3d_abs_angle(vector3d, vector3d) IS
     'Absolute angle (0 < angle < PI/2) between two vectors in radians.';
+
 
 CREATE  OPERATOR @+ (
         PROCEDURE = vector3d_abs_angle,
@@ -382,7 +255,7 @@ CREATE  AGGREGATE sum(vector3d) (
 COMMENT ON AGGREGATE sum(vector3d) IS
     'Sums vectors.';
 
-
+/*
 CREATE  FUNCTION sum(vector3d[]) RETURNS vector3d AS
         $$
         SELECT  sum($1[i])
@@ -436,7 +309,8 @@ CREATE  FUNCTION three_point_normal(vector3d[]) RETURNS SETOF vector3d AS
         $$
         LANGUAGE plpgsql;
 
-COMMENT ON FUNCTION three_point_normal(vector3d[]) IS 'Calculates the normal vector of a PLANAR ring using the first three atoms.';
+COMMENT ON FUNCTION three_point_normal(vector3d[]) IS 
+    'Calculates the normal vector of a PLANAR ring using the first three atoms.';*/
 
 
 
@@ -811,7 +685,7 @@ COMMENT ON FUNCTION arrayxi_binary_union(arrayxi, arrayxi) IS
 
 
 CREATE  FUNCTION arrayxi_bray_curtis(arrayxi, arrayxi)
-        RETURNS FLOAT
+        RETURNS DOUBLE PRECISION
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
@@ -820,7 +694,7 @@ COMMENT ON FUNCTION arrayxi_bray_curtis(arrayxi, arrayxi) IS
 
 
 CREATE  FUNCTION arrayxi_dice(arrayxi, arrayxi)
-        RETURNS FLOAT
+        RETURNS DOUBLE PRECISION
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
@@ -829,7 +703,7 @@ COMMENT ON FUNCTION arrayxi_dice(arrayxi, arrayxi) IS
 
 
 CREATE  FUNCTION arrayxi_euclidean(arrayxi, arrayxi)
-        RETURNS FLOAT
+        RETURNS DOUBLE PRECISION
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
@@ -848,7 +722,7 @@ COMMENT ON OPERATOR ->(arrayxi, arrayxi) IS
 
 
 CREATE  FUNCTION arrayxi_kulcz(arrayxi, arrayxi)
-        RETURNS FLOAT
+        RETURNS DOUBLE PRECISION
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
@@ -867,7 +741,7 @@ COMMENT ON OPERATOR %(arrayxi, arrayxi) IS
 
 
 CREATE  FUNCTION arrayxi_manhattan(arrayxi, arrayxi)
-        RETURNS FLOAT
+        RETURNS DOUBLE PRECISION
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
@@ -886,7 +760,7 @@ COMMENT ON OPERATOR ~>(arrayxi, arrayxi) IS
 
 
 CREATE  FUNCTION arrayxi_ochiai(arrayxi, arrayxi)
-        RETURNS FLOAT
+        RETURNS DOUBLE PRECISION
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
@@ -905,7 +779,7 @@ COMMENT ON OPERATOR @(arrayxi, arrayxi) IS
 
 
 CREATE  FUNCTION arrayxi_russell_rao(arrayxi, arrayxi)
-        RETURNS FLOAT
+        RETURNS DOUBLE PRECISION
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
@@ -924,7 +798,7 @@ COMMENT ON OPERATOR ^(arrayxi, arrayxi) IS
 
 
 CREATE  FUNCTION arrayxi_simpson(arrayxi, arrayxi)
-        RETURNS FLOAT
+        RETURNS DOUBLE PRECISION
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
@@ -943,7 +817,7 @@ COMMENT ON OPERATOR ^^(arrayxi, arrayxi) IS
 
 
 CREATE  FUNCTION arrayxi_simpson_global(arrayxi, arrayxi)
-        RETURNS FLOAT
+        RETURNS DOUBLE PRECISION
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
@@ -952,7 +826,7 @@ COMMENT ON FUNCTION arrayxi_simpson_global(arrayxi, arrayxi) IS
 
 
 CREATE  FUNCTION arrayxi_tversky(arrayxi, arrayxi)
-        RETURNS FLOAT
+        RETURNS DOUBLE PRECISION
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
@@ -974,7 +848,7 @@ COMMENT ON OPERATOR %^(arrayxi, arrayxi) IS
 
 
 CREATE FUNCTION arrayxi_dice_dist(arrayxi, arrayxi)
-    RETURNS FLOAT
+    RETURNS DOUBLE PRECISION
     AS '$libdir/eigen'
     LANGUAGE C STRICT IMMUTABLE;
 
@@ -993,7 +867,7 @@ COMMENT ON OPERATOR <#>(arrayxi, arrayxi) IS
 
 
 CREATE  FUNCTION arrayxi_euclidean_dist(arrayxi, arrayxi)
-        RETURNS FLOAT
+        RETURNS DOUBLE PRECISION
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
@@ -1012,7 +886,7 @@ COMMENT ON OPERATOR <->(arrayxi, arrayxi) IS
 
 
 CREATE  FUNCTION arrayxi_manhattan_dist(arrayxi, arrayxi)
-        RETURNS FLOAT
+        RETURNS DOUBLE PRECISION
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
@@ -1031,7 +905,7 @@ COMMENT ON OPERATOR <~>(arrayxi, arrayxi) IS
 
 
 CREATE FUNCTION arrayxi_kulcz_dist(arrayxi, arrayxi)
-    RETURNS FLOAT
+    RETURNS DOUBLE PRECISION
     AS '$libdir/eigen'
     LANGUAGE C STRICT IMMUTABLE;
 
@@ -1049,7 +923,7 @@ COMMENT ON OPERATOR <%>(arrayxi, arrayxi) IS
 
 
 CREATE FUNCTION arrayxi_ochiai_dist(arrayxi, arrayxi)
-    RETURNS FLOAT
+    RETURNS DOUBLE PRECISION
     AS '$libdir/eigen'
     LANGUAGE C STRICT IMMUTABLE;
 
@@ -1068,7 +942,7 @@ COMMENT ON OPERATOR <@>(arrayxi, arrayxi) IS
 
 
 CREATE FUNCTION arrayxi_russell_rao_dist(arrayxi, arrayxi)
-    RETURNS FLOAT
+    RETURNS DOUBLE PRECISION
     AS '$libdir/eigen'
     LANGUAGE C STRICT IMMUTABLE;
 
@@ -1087,7 +961,7 @@ COMMENT ON OPERATOR <^>(arrayxi, arrayxi) IS
 
 
 CREATE FUNCTION arrayxi_simpson_dist(arrayxi, arrayxi)
-    RETURNS FLOAT
+    RETURNS DOUBLE PRECISION
     AS '$libdir/eigen'
     LANGUAGE C STRICT IMMUTABLE;
 
@@ -1106,7 +980,7 @@ COMMENT ON OPERATOR <^^>(arrayxi, arrayxi) IS
 
 
 CREATE FUNCTION arrayxi_tversky_dist(arrayxi, arrayxi)
-    RETURNS FLOAT
+    RETURNS DOUBLE PRECISION
     AS '$libdir/eigen'
     LANGUAGE C STRICT IMMUTABLE;
 
@@ -1124,7 +998,7 @@ COMMENT ON OPERATOR <%^>(arrayxi, arrayxi) IS
  
 
 CREATE  FUNCTION arrayxi_mean_hamming_dist(arrayxi, arrayxi)
-        RETURNS FLOAT
+        RETURNS DOUBLE PRECISION
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
@@ -1133,7 +1007,7 @@ COMMENT ON FUNCTION arrayxi_mean_hamming_dist(arrayxi, arrayxi) IS
 
 
 CREATE  FUNCTION arrayxi_fuzcavsim_global(arrayxi, arrayxi)
-        RETURNS FLOAT
+        RETURNS DOUBLE PRECISION
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
@@ -1482,21 +1356,21 @@ COMMENT ON OPERATOR +(arrayxd, arrayxd) IS
     'Subtracts the second array from the first.';
 
 
-CREATE  FUNCTION arrayxd_add(arrayxd, scalar INTEGER)
+CREATE  FUNCTION arrayxd_add(arrayxd, scalar DOUBLE PRECISION)
         RETURNS arrayxd
         AS '$libdir/eigen', 'arrayxd_add_scalar'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION arrayxd_add(arrayxd, scalar INTEGER) IS
+COMMENT ON FUNCTION arrayxd_add(arrayxd, scalar DOUBLE PRECISION) IS
     'Adds scalar to every element of array.';
 
 CREATE  OPERATOR + (
         PROCEDURE = arrayxd_add,
         LEFTARG = arrayxd,
-        RIGHTARG = INTEGER,
+        RIGHTARG = DOUBLE PRECISION,
         COMMUTATOR = +);
 
-COMMENT ON OPERATOR +(arrayxd, INTEGER) IS
+COMMENT ON OPERATOR +(arrayxd, DOUBLE PRECISION) IS
     'Adds scalar to every element of array.';
 
 
@@ -1518,20 +1392,20 @@ COMMENT ON OPERATOR -(arrayxd, arrayxd) IS
     'Adds two arrays elementwise.';
 
 
-CREATE  FUNCTION arrayxd_sub(arrayxd, scalar INTEGER)
+CREATE  FUNCTION arrayxd_sub(arrayxd, scalar DOUBLE PRECISION)
         RETURNS arrayxd
         AS '$libdir/eigen', 'arrayxd_sub_scalar'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION arrayxd_sub(arrayxd, scalar INTEGER) IS
+COMMENT ON FUNCTION arrayxd_sub(arrayxd, scalar DOUBLE PRECISION) IS
     'Subtracts scalar from every element of array.';
 
 CREATE  OPERATOR - (
         PROCEDURE = arrayxd_sub,
         LEFTARG = arrayxd,
-        RIGHTARG = INTEGER);
+        RIGHTARG = DOUBLE PRECISION);
 
-COMMENT ON OPERATOR -(arrayxd, INTEGER) IS
+COMMENT ON OPERATOR -(arrayxd, DOUBLE PRECISION) IS
     'Subtracts scalar from every element of array.';
 
 
@@ -1554,21 +1428,21 @@ COMMENT ON OPERATOR *(arrayxd, arrayxd) IS
     'Multiplies both arrays elementwise.';
 
 
-CREATE  FUNCTION arrayxd_mul(arrayxd, scalar INTEGER)
+CREATE  FUNCTION arrayxd_mul(arrayxd, scalar DOUBLE PRECISION)
         RETURNS arrayxd
         AS '$libdir/eigen', 'arrayxd_mul_scalar'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION arrayxd_mul(arrayxd, scalar INTEGER) IS
+COMMENT ON FUNCTION arrayxd_mul(arrayxd, scalar DOUBLE PRECISION) IS
     'Multiplies scalar with every element of array.';
 
 CREATE  OPERATOR * (
         PROCEDURE = arrayxd_add,
         LEFTARG = arrayxd,
-        RIGHTARG = INTEGER,
+        RIGHTARG = DOUBLE PRECISION,
         COMMUTATOR = *);
 
-COMMENT ON OPERATOR *(arrayxd, INTEGER) IS
+COMMENT ON OPERATOR *(arrayxd, DOUBLE PRECISION) IS
     'Multiplies scalar with every element of array.';
 
 
@@ -1576,7 +1450,7 @@ COMMENT ON OPERATOR *(arrayxd, INTEGER) IS
 
 
 CREATE  FUNCTION arrayxd_euclidean(arrayxd, arrayxd)
-        RETURNS FLOAT
+        RETURNS DOUBLE PRECISION
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
@@ -1585,7 +1459,7 @@ COMMENT ON FUNCTION arrayxd_euclidean(arrayxd, arrayxd) IS
 
 
 CREATE  FUNCTION arrayxd_manhattan(arrayxd, arrayxd)
-        RETURNS FLOAT
+        RETURNS DOUBLE PRECISION
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
@@ -1594,7 +1468,7 @@ COMMENT ON FUNCTION arrayxd_manhattan(arrayxd, arrayxd) IS
 
 
 CREATE  FUNCTION arrayxd_usrsim(arrayxd, arrayxd)
-        RETURNS FLOAT
+        RETURNS DOUBLE PRECISION
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
@@ -1605,9 +1479,269 @@ COMMENT ON FUNCTION arrayxd_usrsim(arrayxd, arrayxd) IS
 CREATE  FUNCTION arrayxd_usrcatsim(arrayxd, arrayxd, ow REAL DEFAULT 1.0,
                                    hw REAL DEFAULT 0.25, rw REAL DEFAULT 0.25,
                                    aw REAL DEFAULT 0.25, dw REAL DEFAULT 0.25)
-        RETURNS FLOAT
+        RETURNS DOUBLE PRECISION
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
 COMMENT ON FUNCTION arrayxd_usrcatsim(arrayxd, arrayxd, REAL, REAL, REAL, REAL, REAL) IS
     'Returns the weighted USR Manhattan distance between the arrays for all 60 moments with optional weights for atom types.';
+
+
+
+--------------------------------------------------------------------------------
+----------------------- MATRIXXD: MATRIX OF DOUBLES ----------------------------
+--------------------------------------------------------------------------------
+
+
+
+CREATE  DOMAIN matrixxd AS _float8
+        CONSTRAINT twodimensional CHECK(ARRAY_NDIMS(VALUE) <= 2)
+        CONSTRAINT nonulls CHECK(array_has_nulls(VALUE) = FALSE);
+
+COMMENT ON TYPE matrixxd IS
+    'Two-dimensional matrix of double precision floats. Can be one-dimensional if the matrix has only one row.';
+
+
+---------------------------MATRIX CONSTRUCTION METHODS--------------------------
+
+
+CREATE  FUNCTION matrixxd_identity(rows INTEGER, cols INTEGER)
+        RETURNS matrixxd
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION matrixxd_identity(rows INTEGER, cols INTEGER) IS 
+    'Returns an identity matrix of the given dimensions.';
+
+
+CREATE  FUNCTION matrixxd_constant(rows INTEGER, cols INTEGER, value DOUBLE PRECISION)
+        RETURNS matrixxd
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION matrixxd_constant(rows INTEGER, cols INTEGER, value DOUBLE PRECISION) IS 
+    'Returns a matrix of the given dimensions with the given coefficient.';
+
+
+CREATE  FUNCTION matrixxd_random(rows INTEGER, cols INTEGER)
+        RETURNS matrixxd
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION matrixxd_random(rows INTEGER, cols INTEGER) IS 
+    'Returns a matrix of the given dimensions with random coefficients.';
+
+
+-------------------------------MATRIX PROPERTIES--------------------------------
+
+
+CREATE  FUNCTION matrixxd_is_identity(matrixxd, prec DOUBLE PRECISION DEFAULT 0.001)
+        RETURNS BOOLEAN
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION matrixxd_is_identity(matrixxd, DOUBLE PRECISION) IS 
+    'Returns true if the given matrix is approximately equal to the identity matrix (not necessarily square), within the given precision.';
+
+
+CREATE  FUNCTION matrixxd_size(matrixxd)
+        RETURNS INTEGER
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION matrixxd_size(matrixxd) IS 
+    'Returns the number of matrix coefficients.';
+
+
+CREATE  OPERATOR #(
+        PROCEDURE = matrixxd_size,
+        RIGHTARG = matrixxd);
+
+COMMENT ON OPERATOR #(None, matrixxd) IS 
+    'Returns the number of matrix coefficients.';
+
+
+--------------------------------MATRIX ARITHMETIC-------------------------------
+
+
+CREATE  FUNCTION matrixxd_add(matrixxd, matrixxd)
+        RETURNS matrixxd
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION matrixxd_add(matrixxd, matrixxd) IS 
+    'Add the two matrices together.';
+
+
+CREATE  OPERATOR +(
+        PROCEDURE = matrixxd_add,
+        LEFTARG = matrixxd,
+        RIGHTARG = matrixxd);
+
+COMMENT ON OPERATOR +(matrixxd, matrixxd) IS 
+    'Add the two matrices together.';
+
+
+CREATE  FUNCTION matrixxd_subtract(matrixxd, matrixxd)
+        RETURNS matrixxd
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION matrixxd_subtract(matrixxd, matrixxd) IS 
+    'Subtracts the second matrix from the first.';
+
+
+CREATE  OPERATOR -(
+        PROCEDURE = matrixxd_subtract,
+        LEFTARG = matrixxd,
+        RIGHTARG = matrixxd);
+
+COMMENT ON OPERATOR -(matrixxd, matrixxd) IS 
+    'Subtracts the second matrix from the first.';
+
+
+CREATE  FUNCTION matrixxd_multiply(matrixxd, matrixxd)
+        RETURNS matrixxd
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION matrixxd_multiply(matrixxd, matrixxd) IS 
+    'Multiplies the matrices.';
+
+
+CREATE  OPERATOR *(
+        PROCEDURE = matrixxd_multiply,
+        LEFTARG = matrixxd,
+        RIGHTARG = matrixxd);
+
+COMMENT ON OPERATOR *(matrixxd, matrixxd) IS 
+    'Multiplies the matrices.';
+
+
+CREATE  FUNCTION matrixxd_scalar_product(matrixxd, DOUBLE PRECISION)
+        RETURNS matrixxd
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION matrixxd_scalar_product(matrixxd, DOUBLE PRECISION) IS 
+    'Returns the scalar product.';
+
+
+CREATE  OPERATOR *(
+        PROCEDURE = matrixxd_scalar_product,
+        COMMUTATOR = *,
+        LEFTARG = matrixxd,
+        RIGHTARG = DOUBLE PRECISION);
+
+COMMENT ON OPERATOR *(matrixxd, DOUBLE PRECISION) IS 
+    'Returns the scalar product.';
+
+
+CREATE  FUNCTION matrixxd_scalar_division(matrixxd, DOUBLE PRECISION)
+        RETURNS matrixxd
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION matrixxd_scalar_division(matrixxd, DOUBLE PRECISION) IS 
+    'Returns the scalar division';
+
+
+CREATE  OPERATOR /(
+        PROCEDURE = matrixxd_scalar_division,
+        LEFTARG = matrixxd,
+        RIGHTARG = DOUBLE PRECISION);
+
+COMMENT ON OPERATOR /(matrixxd, DOUBLE PRECISION) IS 
+    'Returns the scalar division';
+
+
+-------------------------------COL-WISE METHODS---------------------------------
+
+
+CREATE  FUNCTION matrixxd_cw_mean(matrixxd)
+        RETURNS matrixxd
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION matrixxd_cw_mean(matrixxd) IS 
+    'Returns the column-wise mean of the matrix';
+
+
+CREATE  FUNCTION matrixxd_cw_sum(matrixxd)
+        RETURNS matrixxd
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION matrixxd_cw_sum(matrixxd) IS 
+    'Returns the column-wise sum of the matrix';
+
+
+-------------------------------ROW-WISE METHODS---------------------------------
+
+
+CREATE  FUNCTION matrixxd_rw_mean(matrixxd)
+        RETURNS matrixxd
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION matrixxd_rw_mean(matrixxd) IS 
+    'Returns the row-wise mean of the matrix';
+
+
+CREATE  FUNCTION matrixxd_rw_sum(matrixxd)
+        RETURNS matrixxd
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION matrixxd_rw_sum(matrixxd) IS 
+    'Returns the row-wise sum of the matrix';
+
+
+-----------------------MATRICES AND OTHER EIGEN OBJECTS-------------------------
+
+
+-- CREATE  CAST (matrixxd AS vector3d)
+--         WITH FUNCTION vector3d(matrixxd)
+--         AS ASSIGNMENT;
+
+CREATE  FUNCTION matrixxd_hstack(matrixxd, matrixxd)
+        RETURNS matrixxd
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION matrixxd_hstack(matrixxd, matrixxd) IS 
+    'horizontally stacks the second matrix onto the first.';
+
+
+CREATE  FUNCTION matrixxd_vstack(matrixxd, matrixxd)
+        RETURNS matrixxd
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION matrixxd_vstack(matrixxd, matrixxd) IS 
+    'vertically stacks the second matrix onto the first.';
+
+
+CREATE  FUNCTION matrixxd_hstack(matrixxd, vector3d)
+        RETURNS matrixxd
+        AS '$libdir/eigen','matrixxd_hstack_vector3d'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION matrixxd_hstack(matrixxd, vector3d) IS 
+    'horizontally stacks the vector3d onto the matrixxd';
+
+
+CREATE  FUNCTION matrixxd_vstack(matrixxd, vector3d)
+        RETURNS matrixxd
+        AS '$libdir/eigen','matrixxd_vstack_vector3d'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION matrixxd_vstack(matrixxd, vector3d) IS 
+    'vertically stacks the vector3d onto the matrixxd';
+
+
+CREATE  AGGREGATE avg(vector3d) (
+        sfunc = matrixxd_vstack,
+        stype = matrixxd,
+        finalfunc = matrixxd_cw_mean,
+        initcond = '{}');

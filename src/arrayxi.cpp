@@ -1,31 +1,40 @@
-#include <Eigen/Dense>
+#include "eigen.h"
 #include "arrayxi.h"
 
 using namespace Eigen;
 
-// CONSTRUCTS A POSTGRESQL ARRAY FROM AN EIGEN OBJECTS
-ArrayType *arrayxi_to_arraytype(const ArrayXi &arrayxi, int size)
+inline int intersect_size(const ArrayXi &a, const ArrayXi &b)
 {
-    const int *data = arrayxi.data();
-    Datum *d = (Datum *) palloc(sizeof(Datum) * size);
+    return (a == b).cast<int>().min(a).count();
+}
 
-    for (int i = 0; i < size; i++) d[i] = Int32GetDatum(data[i]);
+inline int unique_left_size(const ArrayXi &a, const ArrayXi &b)
+{
+    return (a != b).cast<int>().min(a).count();
+}
 
-    // CONSTRUCT ARRAY
-    return construct_array(d, size, INT4OID, sizeof(int4), true, 'i');
+inline int unique_right_size(const ArrayXi &a, const ArrayXi &b)
+{
+    return (a != b).cast<int>().min(b).count();
+}
+
+// CONVERTS A POSTGRESQL ARRAYTYPE INTO AN EIGEN ARRAY OF INTEGERS
+inline ArrayXi arraytype_to_arrayxi(ArrayType *array)
+{
+    // MAP POSTGRESQL ARRAY TO EIGEN ARRAYXI
+    Map<ArrayXi> arrayxi((int *) ARR_DATA_PTR(array), arraytype_num_elems(array));
+    
+    return arrayxi;
 }
 
 // RETURNS ARRAY WITH GIVEN CONSTANT VALUE
 extern "C"
 ArrayType *ArrayXiCopy(ArrayType *array)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(array);
-
     // MAP POSTGRESQL ARRAY TO
-    Map<ArrayXi> arrayxi(ARRINTDATA(array), size);
+    Map<ArrayXi> arrayxi((int *) ARR_DATA_PTR(array), arraytype_num_elems(array));
 
-    return arrayxi_to_arraytype(arrayxi, size);
+    return densebase_to_int32_arraytype(arrayxi);
 }
 
 // RETURNS ARRAY WITH GIVEN CONSTANT VALUE
@@ -35,7 +44,7 @@ ArrayType *ArrayXiConstant(int size, int value)
     // INITIALIZE ARRAY ACCORDING TO THE GIVEN SIZE
     ArrayXi arrayxi = ArrayXi::Constant(size, value);
 
-    return arrayxi_to_arraytype(arrayxi, size);
+    return densebase_to_int32_arraytype(arrayxi);
 }
 
 // RETURNS ARRAY WITH RANDOM ELEMENTS
@@ -45,7 +54,7 @@ ArrayType *ArrayXiRandom(int size)
     // INITIALIZE ARRAY ACCORDING TO THE GIVEN SIZE
     ArrayXi arrayxi = ArrayXi::Random(size);
 
-    return arrayxi_to_arraytype(arrayxi, size);
+    return densebase_to_int32_arraytype(arrayxi);
 }
 
 // RETURNS AN ARRAYS WITH ELEMENTS EQUALLY SPACE BETWEEN LOW AND HIGH
@@ -55,16 +64,15 @@ ArrayType *ArrayXiLinSpaced(int size, int low, int high)
     // INITIALIZE ARRAY ACCORDING TO THE GIVEN SIZE
     ArrayXi arrayxi = ArrayXi::LinSpaced(size, low, high);
 
-    return arrayxi_to_arraytype(arrayxi, size);
+    return densebase_to_int32_arraytype(arrayxi);
 }
 
 // RETURNS THE NUMBER OF COEFFICIENTS
 extern "C"
 int ArrayXiSize(ArrayType *array)
 {
-    // MAP POSTGRESQL ARRAY TO
-    Map<ArrayXi> arrayxi(ARRINTDATA(array), ARRNELEMS(array));
-
+    ArrayXi arrayxi = arraytype_to_arrayxi(array);
+    
     // RETURNS THE SIZE FOR 1D ARRAY
     return arrayxi.innerSize();
 }
@@ -73,9 +81,7 @@ int ArrayXiSize(ArrayType *array)
 extern "C"
 int ArrayXiNonZeros(ArrayType *array)
 {
-
-    // MAP POSTGRESQL ARRAY TO
-    Map<ArrayXi> arrayxi(ARRINTDATA(array), ARRNELEMS(array));
+    ArrayXi arrayxi = arraytype_to_arrayxi(array);
 
     return arrayxi.count();
 }
@@ -84,8 +90,7 @@ int ArrayXiNonZeros(ArrayType *array)
 extern "C"
 int ArrayXiMinCoeff(ArrayType *array)
 {
-    // MAP POSTGRESQL ARRAY TO
-    Map<ArrayXi> arrayxi(ARRINTDATA(array), ARRNELEMS(array));
+    ArrayXi arrayxi = arraytype_to_arrayxi(array);
 
     return arrayxi.minCoeff();
 }
@@ -94,8 +99,7 @@ int ArrayXiMinCoeff(ArrayType *array)
 extern "C"
 int ArrayXiMaxCoeff(ArrayType *array)
 {
-    // MAP POSTGRESQL ARRAY TO
-    Map<ArrayXi> arrayxi(ARRINTDATA(array), ARRNELEMS(array));
+    ArrayXi arrayxi = arraytype_to_arrayxi(array);
 
     return arrayxi.maxCoeff();
 }
@@ -104,8 +108,7 @@ int ArrayXiMaxCoeff(ArrayType *array)
 extern "C"
 long ArrayXiSum(ArrayType *array)
 {
-    // MAP POSTGRESQL ARRAY TO
-    Map<ArrayXi> arrayxi(ARRINTDATA(array), ARRNELEMS(array));
+    ArrayXi arrayxi = arraytype_to_arrayxi(array);
 
     return arrayxi.sum();
 }
@@ -114,8 +117,7 @@ long ArrayXiSum(ArrayType *array)
 extern "C"
 double ArrayXiMean(ArrayType *array)
 {
-    // MAP POSTGRESQL ARRAY TO
-    Map<ArrayXi> arrayxi(ARRINTDATA(array), ARRNELEMS(array));
+    ArrayXi arrayxi = arraytype_to_arrayxi(array);
 
     return arrayxi.mean();
 }
@@ -124,90 +126,74 @@ double ArrayXiMean(ArrayType *array)
 extern "C"
 ArrayType *ArrayXiAbs(ArrayType *array)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(array);
+    ArrayXi arrayxi = arraytype_to_arrayxi(array);
 
-    // MAP POSTGRESQL ARRAY TO
-    Map<ArrayXi> arrayxi(ARRINTDATA(array), size);
-
-    return arrayxi_to_arraytype(arrayxi.abs(), size);
+    return densebase_to_int32_arraytype(arrayxi.abs());
 }
 
 // RETURNS A BINARY VERSION OF THE ARRAY, I.E. ALL ELEMENTS > 0 WILL BE 1
 extern "C"
 ArrayType *ArrayXiBinary(ArrayType *array)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(array);
+    ArrayXi arrayxi = arraytype_to_arrayxi(array);
 
-    // MAP POSTGRESQL ARRAY TO
-    Map<ArrayXi> arrayxi(ARRINTDATA(array), size);
-
-    return arrayxi_to_arraytype((arrayxi > 0).cast<int>(), size);
+    return densebase_to_int32_arraytype((arrayxi > 0).cast<int>());
 }
 
 // SUM TWO ARRAYS ELEMENTWISE
 extern "C"
 ArrayType *ArrayXiAdd(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
 
-    return arrayxi_to_arraytype(arrayxi1 + arrayxi2, size);
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
+    
+    return densebase_to_int32_arraytype(arrayxi1 + arrayxi2);
 }
 
 // SUBTRACTS TWO ARRAYS ELEMENTWISE
 extern "C"
 ArrayType *ArrayXiSub(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
 
-    return arrayxi_to_arraytype(arrayxi1 - arrayxi2, size);
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
+
+    return densebase_to_int32_arraytype(arrayxi1 - arrayxi2);
 }
 
 // MULTIPLIES TWO ARRAYS ELEMENTWISE
 extern "C"
 ArrayType *ArrayXiMul(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
 
-    return arrayxi_to_arraytype(arrayxi1 * arrayxi2, size);
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
+
+    return densebase_to_int32_arraytype(arrayxi1 * arrayxi2);
 }
 
 // DIVIDES TWO ARRAYS ELEMENTWISE
 extern "C"
 ArrayType *ArrayXiDiv(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
 
-    return arrayxi_to_arraytype(arrayxi1 / arrayxi2, size);
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
+
+    return densebase_to_int32_arraytype(arrayxi1 / arrayxi2);
 }
 
 
@@ -218,50 +204,39 @@ ArrayType *ArrayXiDiv(ArrayType *a1, ArrayType *a2)
 extern "C"
 ArrayType *ArrayXiAddScalar(ArrayType *array, int scalar)
 {
-    int size = ARRNELEMS(array);
+    ArrayXi arrayxi = arraytype_to_arrayxi(array);
 
-    // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi(ARRINTDATA(array), size);
-
-    return arrayxi_to_arraytype(arrayxi + scalar, size);
+    return densebase_to_int32_arraytype(arrayxi + scalar);
 }
 
 // SUBTRACT SCALAR FROM EVERY ELEMENT
 extern "C"
 ArrayType *ArrayXiSubScalar(ArrayType *array, int scalar)
 {
-    int size = ARRNELEMS(array);
+    ArrayXi arrayxi = arraytype_to_arrayxi(array);
 
-    // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi(ARRINTDATA(array), size);
-
-    return arrayxi_to_arraytype(arrayxi - scalar, size);
+    return densebase_to_int32_arraytype(arrayxi - scalar);
 }
 
 // MULTIPLY SCALAR WITH EVERY ELEMENT
 extern "C"
 ArrayType *ArrayXiMulScalar(ArrayType *array, int scalar)
 {
-    int size = ARRNELEMS(array);
+    ArrayXi arrayxi = arraytype_to_arrayxi(array);
 
-    // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi(ARRINTDATA(array), size);
-
-    return arrayxi_to_arraytype(arrayxi * scalar, size);
+    return densebase_to_int32_arraytype(arrayxi * scalar);
 }
 
 // RETURNS TRUE IF THE FIRST ARRAY CONTAINS ALL ELEMENTS OF THE SECOND
 extern "C"
 bool ArrayXiEqual(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
     
     return (arrayxi1==arrayxi2).all();
 }
@@ -270,14 +245,12 @@ bool ArrayXiEqual(ArrayType *a1, ArrayType *a2)
 extern "C"
 bool ArrayXiContains(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
 
     return ((arrayxi1 > 0) == (arrayxi2 > 0)).count() == arrayxi2.count();
 }
@@ -286,14 +259,12 @@ bool ArrayXiContains(ArrayType *a1, ArrayType *a2)
 extern "C"
 bool ArrayXiOverlaps(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
 
     return ((arrayxi1 > 0) == (arrayxi2 > 0)).any();
 }
@@ -302,51 +273,45 @@ bool ArrayXiOverlaps(ArrayType *a1, ArrayType *a2)
 extern "C"
 ArrayType *ArrayXiIntersection(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
 
-    return arrayxi_to_arraytype((arrayxi1==arrayxi2).select(arrayxi1, 0), size);
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
+
+    return densebase_to_int32_arraytype((arrayxi1==arrayxi2).select(arrayxi1, 0));
 }
 
 // RETURNS THE UNION OF BOTH ARRAYS AS THE MAXIMUM OF COFFICIENTS
 extern "C"
 ArrayType *ArrayXiUnion(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
 
     // DEFINE UNION AS THE MAXIMUM OF BOTH ARRAYS: A(2,3,4), B(4,2,3) = C(4,3,4)
-    return arrayxi_to_arraytype(arrayxi1.max(arrayxi2), size);
+    return densebase_to_int32_arraytype(arrayxi1.max(arrayxi2));
 }
 
 // RETURNS THE BINARY UNION OF BOTH ARRAYS
 extern "C"
 ArrayType *ArrayXiBinaryUnion(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
 
     ArrayXi binary_union = (arrayxi1.max(arrayxi2) > 0).cast<int>();
     
-    return arrayxi_to_arraytype(binary_union, size);
+    return densebase_to_int32_arraytype(binary_union);
 }
 
 
@@ -357,14 +322,12 @@ ArrayType *ArrayXiBinaryUnion(ArrayType *a1, ArrayType *a2)
 extern "C"
 double ArrayXiBrayCurtis(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
 
     return 1.0 - ((arrayxi1-arrayxi2).abs().sum() / (double) (arrayxi1+arrayxi2).sum());
 }
@@ -373,19 +336,17 @@ double ArrayXiBrayCurtis(ArrayType *a1, ArrayType *a2)
 extern "C"
 double ArrayXiDice(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
 
     // COMMON COUNTS
-    unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
+    unsigned int c = intersect_size(arrayxi1,arrayxi2);
 
-    return 2 * c / (double) size;
+    return 2 * c / (double) arrayxi1.size();
 }
 
 // RETURNS THE KULCZYNSKI SIMILARITY
@@ -394,21 +355,19 @@ double ArrayXiKulczynski(ArrayType *a1, ArrayType *a2)
 {
     double similarity = 0.0;
     
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
 
     // SET COUNTS ON THE INDIVIDUAL ARRAYS
     unsigned int A = arrayxi1.count();
     unsigned int B = arrayxi2.count();
     
     // COMMON COUNTS
-    unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
+    unsigned int c = intersect_size(arrayxi1,arrayxi2);
 
     // AVOID DIVISION BY ZERO
     if (A != 0 && B != 0) similarity = c * (A + B) / (double) (2 * A * B);
@@ -420,46 +379,42 @@ double ArrayXiKulczynski(ArrayType *a1, ArrayType *a2)
 extern "C"
 double ArrayXiNormEuclidean(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
 
     // SET COUNTS ON THE INDIVIDUAL ARRAYS
     unsigned int A = arrayxi1.count();
     unsigned int B = arrayxi2.count();
 
     // COMMON COUNTS
-    unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
+    unsigned int c = intersect_size(arrayxi1,arrayxi2);
 
-    return sqrt((A + B - 2 * c) / (double) size);
+    return sqrt((A + B - 2 * c) / (double) arrayxi1.size());
 }
 
 // RETURNS THE NORMALIZED MANHATTAN SIMILARITY
 extern "C"
 double ArrayXiNormManhattan(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
 
     // SET COUNTS ON THE INDIVIDUAL ARRAYS
     unsigned int A = arrayxi1.count();
     unsigned int B = arrayxi2.count();
 
     // COMMON COUNTS
-    unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
+    unsigned int c = intersect_size(arrayxi1,arrayxi2);
 
-    return (A + B - 2 * c) / (double) size;
+    return (A + B - 2 * c) / (double) arrayxi1.size();
 }
 
 // RETURNS THE OCHIAI/COSINE SIMILARITY
@@ -468,21 +423,19 @@ double ArrayXiOchiai(ArrayType *a1, ArrayType *a2)
 {
     double similarity = 0.0;
     
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
 
     // SET COUNTS ON THE INDIVIDUAL ARRAYS
     unsigned int A = arrayxi1.count();
     unsigned int B = arrayxi2.count();
 
     // COMMON COUNTS
-    unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
+    unsigned int c = intersect_size(arrayxi1,arrayxi2);
 
     // AVOID DIVISION BY ZERO
     if (A != 0 && B != 0) similarity = c / sqrt(A*B);
@@ -494,19 +447,17 @@ double ArrayXiOchiai(ArrayType *a1, ArrayType *a2)
 extern "C"
 double ArrayXiRussellRao(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
 
     // COMMON COUNTS
-    unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
+    unsigned int c = intersect_size(arrayxi1,arrayxi2);
 
-    return c / (double) size;
+    return c / (double) arrayxi1.size();
 }
 
 // RETURNS THE SIMPSON SIMILARITY - FUZCAV DEFAULT SIMILARITY
@@ -515,21 +466,19 @@ double ArrayXiSimpson(ArrayType *a1, ArrayType *a2)
 {
     double similarity = 0.0;
     
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
 
     // SET COUNTS ON THE INDIVIDUAL ARRAYS
     unsigned int A = arrayxi1.count();
     unsigned int B = arrayxi2.count();
 
     // COMMON COUNTS
-    unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
+    unsigned int c = intersect_size(arrayxi1,arrayxi2);
 
     // AVOID DIVISION BY ZERO
     if (A != 0 && B != 0) similarity = c / (double) std::min(A,B);
@@ -543,21 +492,19 @@ double ArrayXiSimpsonGlobal(ArrayType *a1, ArrayType *a2)
 {
     double similarity = 0.0;
     
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
 
     // SET COUNTS ON THE INDIVIDUAL ARRAYS
     unsigned int A = arrayxi1.count();
     unsigned int B = arrayxi2.count();
 
     // COMMON COUNTS
-    unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
+    unsigned int c = intersect_size(arrayxi1,arrayxi2);
 
     // AVOID DIVISION BY ZERO
     if (A != 0 && B != 0) similarity = c / (double) std::max(A,B);
@@ -571,21 +518,19 @@ double ArrayXiTversky(ArrayType *a1, ArrayType *a2)
 {
     double similarity = 0.0;
     
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
 
     // SET COUNTS ON THE INDIVIDUAL ARRAYS
     unsigned int A = arrayxi1.count();
     unsigned int B = arrayxi2.count();
 
     // COMMON COUNTS
-    unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
+    unsigned int c = intersect_size(arrayxi1,arrayxi2);
 
     // AVOID DIVISION BY ZERO
     if (A != 0 && B != 0) 
@@ -606,14 +551,12 @@ double ArrayXiTversky(ArrayType *a1, ArrayType *a2)
 extern "C"
 double ArrayXiEuclideanDist(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
 
     return sqrt((arrayxi1-arrayxi2).square().sum());
 }
@@ -622,14 +565,12 @@ double ArrayXiEuclideanDist(ArrayType *a1, ArrayType *a2)
 extern "C"
 double ArrayXiManhattanDist(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
 
     return (arrayxi1-arrayxi2).abs().sum();
 }
@@ -638,20 +579,18 @@ double ArrayXiManhattanDist(ArrayType *a1, ArrayType *a2)
 extern "C"
 double ArrayXiMeanHammingDist(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
 
     // UNIQUE COUNTS IN BOTH ARRAYS
-    unsigned int a = UNIQUE_LEFT_SIZE(arrayxi1,arrayxi2);
-    unsigned int b = UNIQUE_RIGHT_SIZE(arrayxi1,arrayxi2);
+    unsigned int a = unique_left_size(arrayxi1,arrayxi2);
+    unsigned int b = unique_right_size(arrayxi1,arrayxi2);
     
-    return (a + b) / (double) size;
+    return (a + b) / (double) arrayxi1.size();
 }
 
 
@@ -662,17 +601,15 @@ double ArrayXiMeanHammingDist(ArrayType *a1, ArrayType *a2)
 extern "C"
 double ArrayXiFuzCavSimGlobal(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
 
     // COUNTS THAT ARE SHARED BETWEEN THE FUZCAV FINGERPRINTS
-    unsigned int c = INTERSECT_SIZE(arrayxi1,arrayxi2);
+    unsigned int c = intersect_size(arrayxi1,arrayxi2);
 
     return (c / (double) std::max(arrayxi1.count(), arrayxi2.count()));
 }
@@ -702,18 +639,16 @@ float SimilarityUpperBound(ArrayType *a1, ArrayType *a2, char *metric)
 {
     float upper_bound = 0.0;
     
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXi> arrayxi1(ARRINTDATA(a1), size);
-    Map<ArrayXi> arrayxi2(ARRINTDATA(a2), size);
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
     
     // QUERY ARRAY HAS TO BE CONVERTED TO BINARY VERSION TO BE COMPATIBLE WITH
     // THE GIST INTERNAL NODES
-    unsigned int c = INTERSECT_SIZE(arrayxi1, (arrayxi2 > 0).cast<int>());
+    unsigned int c = intersect_size(arrayxi1, (arrayxi2 > 0).cast<int>());
     unsigned int A = arrayxi1.count();
     unsigned int B = arrayxi2.count();
     
@@ -726,7 +661,7 @@ float SimilarityUpperBound(ArrayType *a1, ArrayType *a2, char *metric)
     
     else if (strcmp(metric,"euclidean") == 0) 
     {
-        upper_bound = sqrt((B - 2 * c) / (float) size);
+        upper_bound = sqrt((B - 2 * c) / (float) arrayxi1.size());
     }
     
     else if (strcmp(metric,"kulczynski") == 0) 
@@ -736,7 +671,7 @@ float SimilarityUpperBound(ArrayType *a1, ArrayType *a2, char *metric)
     
     else if (strcmp(metric,"manhattan") == 0) 
     {
-        upper_bound = (B - 2 * c) / (float) size;
+        upper_bound = (B - 2 * c) / (float) arrayxi1.size();
     }
     
     else if (strcmp(metric,"ochiai") == 0) 
@@ -746,7 +681,7 @@ float SimilarityUpperBound(ArrayType *a1, ArrayType *a2, char *metric)
     
     else if (strcmp(metric,"russell-rao") == 0) 
     {
-        upper_bound = B / (float) size;
+        upper_bound = B / (float) arrayxi1.size();
     }
     
     // NO REDUCTION OF SEARCH SPACE HERE

@@ -1,43 +1,32 @@
-#include <Eigen/Dense>
+#include "eigen.h"
 #include "arrayxd.h"
-#include <iostream>
-
-#define ARRINTDATA(array)   ((double *)ARR_DATA_PTR(array))
-#define ARRNELEMS(x)        ArrayGetNItems( ARR_NDIM(x), ARR_DIMS(x))
-#define ARREQSIZE(a,b)      if (a != b) ereport(ERROR, (errcode(ERRCODE_DATA_EXCEPTION), errmsg("arrays must have the same number of elements.")))
 
 using namespace Eigen;
 
-// CONSTRUCTS A POSTGRESQL ARRAY FROM AN EIGEN ARRAY
-ArrayType *arrayxd_to_arraytype(const ArrayXd &arrayxd, int size)
+// CONVERTS A POSTGRESQL INTO AN EIGEN ARRAYXD
+inline ArrayXd arraytype_to_arrayxd(ArrayType *array)
 {
-    const double *data = arrayxd.data();
-    Datum *d = (Datum *) palloc(sizeof(Datum) * size);
-
-    for (int i = 0; i < size; i++) d[i] = Float8GetDatum(data[i]);
-
-    // CONSTRUCT ARRAY
-    return construct_array(d, size, FLOAT8OID, sizeof(float8), true, 'd');
+    // MAP POSTGRESQL ARRAY TO EIGEN ARRAYXD
+    Map<ArrayXd> arrayxd((double *) ARR_DATA_PTR(array), arraytype_num_elems(array));
+    
+    return arrayxd;
 }
 
 // RETURNS THE NUMBER OF COEFFICIENTS IN ARRAY
 extern "C"
 int ArrayXdSize(ArrayType *array)
 {
-    // MAP POSTGRESQL ARRAY TO
-    Map<ArrayXd> arrayxd(ARRINTDATA(array), ARRNELEMS(array));
+    ArrayXd arrayxd = arraytype_to_arrayxd(array);
 
     // RETURNS THE SIZE FOR 1D ARRAY
-    return arrayxd.innerSize();
+    return arrayxd.size();
 }
 
 // RETURNS THE NUMBER OF NON-NULL COEFFICIENTS
 extern "C"
 int ArrayXdNonZeros(ArrayType *array)
 {
-
-    // MAP POSTGRESQL ARRAY TO
-    Map<ArrayXd> arrayxd(ARRINTDATA(array), ARRNELEMS(array));
+    ArrayXd arrayxd = arraytype_to_arrayxd(array);
 
     return arrayxd.count();
 }
@@ -46,8 +35,7 @@ int ArrayXdNonZeros(ArrayType *array)
 extern "C"
 double ArrayXdMinCoeff(ArrayType *array)
 {
-    // MAP POSTGRESQL ARRAY TO
-    Map<ArrayXd> arrayxd(ARRINTDATA(array), ARRNELEMS(array));
+    ArrayXd arrayxd = arraytype_to_arrayxd(array);
 
     return arrayxd.minCoeff();
 }
@@ -56,8 +44,7 @@ double ArrayXdMinCoeff(ArrayType *array)
 extern "C"
 double ArrayXdMaxCoeff(ArrayType *array)
 {
-    // MAP POSTGRESQL ARRAY TO
-    Map<ArrayXd> arrayxd(ARRINTDATA(array), ARRNELEMS(array));
+    ArrayXd arrayxd = arraytype_to_arrayxd(array);
 
     return arrayxd.maxCoeff();
 }
@@ -66,8 +53,7 @@ double ArrayXdMaxCoeff(ArrayType *array)
 extern "C"
 double ArrayXdSum(ArrayType *array)
 {
-    // MAP POSTGRESQL ARRAY TO
-    Map<ArrayXd> arrayxd(ARRINTDATA(array), ARRNELEMS(array));
+    ArrayXd arrayxd = arraytype_to_arrayxd(array);
 
     return arrayxd.sum();
 }
@@ -76,125 +62,103 @@ double ArrayXdSum(ArrayType *array)
 extern "C"
 double ArrayXdMean(ArrayType *array)
 {
-    // MAP POSTGRESQL ARRAY TO
-    Map<ArrayXd> arrayxd(ARRINTDATA(array), ARRNELEMS(array));
+    ArrayXd arrayxd = arraytype_to_arrayxd(array);
 
     return arrayxd.mean();
 }
 
-// RETURNS THE ABSULATE OF THE ARRAY
+// RETURNS THE ABSOLUTE OF THE ARRAY
 extern "C"
 ArrayType *ArrayXdAbs(ArrayType *array)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(array);
+    ArrayXd arrayxd = arraytype_to_arrayxd(array);
 
-    // MAP POSTGRESQL ARRAY TO
-    Map<ArrayXd> arrayxd(ARRINTDATA(array), size);
-
-    return arrayxd_to_arraytype(arrayxd.abs(), size);
+    return densebase_to_float8_arraytype(arrayxd.abs());
 }
 
 // SUM TWO ARRAYS ELEMENTWISE
 extern "C"
 ArrayType *ArrayXdAdd(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXd> arrayxd1(ARRINTDATA(a1), size);
-    Map<ArrayXd> arrayxd2(ARRINTDATA(a2), size);
+    ArrayXd arrayxd1 = arraytype_to_arrayxd(a1);
+    ArrayXd arrayxd2 = arraytype_to_arrayxd(a2);
 
-    return arrayxd_to_arraytype(arrayxd1 + arrayxd2, size);
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxd1,arrayxd2);
+
+    return densebase_to_float8_arraytype(arrayxd1 + arrayxd2);
 }
 
 // SUBTRACTS TWO ARRAYS ELEMENTWISE
 extern "C"
 ArrayType *ArrayXdSub(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXd> arrayxd1(ARRINTDATA(a1), size);
-    Map<ArrayXd> arrayxd2(ARRINTDATA(a2), size);
+    ArrayXd arrayxd1 = arraytype_to_arrayxd(a1);
+    ArrayXd arrayxd2 = arraytype_to_arrayxd(a2);
 
-    return arrayxd_to_arraytype(arrayxd1 - arrayxd2, size);
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxd1,arrayxd2);
+
+    return densebase_to_float8_arraytype(arrayxd1 - arrayxd2);
 }
 
 // MULTIPLIES TWO ARRAYS ELEMENTWISE
 extern "C"
 ArrayType *ArrayXdMul(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXd> arrayxd1(ARRINTDATA(a1), size);
-    Map<ArrayXd> arrayxd2(ARRINTDATA(a2), size);
+    ArrayXd arrayxd1 = arraytype_to_arrayxd(a1);
+    ArrayXd arrayxd2 = arraytype_to_arrayxd(a2);
 
-    return arrayxd_to_arraytype(arrayxd1 * arrayxd2, size);
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxd1,arrayxd2);
+
+    return densebase_to_float8_arraytype(arrayxd1 * arrayxd2);
 }
 
 // DIVIDES TWO ARRAYS ELEMENTWISE
 extern "C"
 ArrayType *ArrayXdDiv(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXd> arrayxd1(ARRINTDATA(a1), size);
-    Map<ArrayXd> arrayxd2(ARRINTDATA(a2), size);
+    ArrayXd arrayxd1 = arraytype_to_arrayxd(a1);
+    ArrayXd arrayxd2 = arraytype_to_arrayxd(a2);
 
-    return arrayxd_to_arraytype(arrayxd1 / arrayxd2, size);
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxd1,arrayxd2);
+
+    return densebase_to_float8_arraytype(arrayxd1 / arrayxd2);
 }
 
 /* SCALAR ARITHMETIC */
 
 // ADD SCALAR TO EVERY ELEMENT
 extern "C"
-ArrayType *ArrayXdAddScalar(ArrayType *array, int scalar)
+ArrayType *ArrayXdAddScalar(ArrayType *array, double scalar)
 {
-    int size = ARRNELEMS(array);
-
-    // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXd> arrayxd(ARRINTDATA(array), size);
-
-    return arrayxd_to_arraytype(arrayxd + scalar, size);
+    ArrayXd arrayxd = arraytype_to_arrayxd(array);
+    
+    return densebase_to_float8_arraytype(arrayxd + scalar);
 }
 
 // ADD SCALAR TO EVERY ELEMENT
 extern "C"
-ArrayType *ArrayXdSubScalar(ArrayType *array, int scalar)
+ArrayType *ArrayXdSubScalar(ArrayType *array, double scalar)
 {
-    int size = ARRNELEMS(array);
+    ArrayXd arrayxd = arraytype_to_arrayxd(array);
 
-    // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXd> arrayxd(ARRINTDATA(array), size);
-
-    return arrayxd_to_arraytype(arrayxd - scalar, size);
+    return densebase_to_float8_arraytype(arrayxd - scalar);
 }
 
 // ADD SCALAR TO EVERY ELEMENT
 extern "C"
-ArrayType *ArrayXdMulScalar(ArrayType *array, int scalar)
+ArrayType *ArrayXdMulScalar(ArrayType *array, double scalar)
 {
-    int size = ARRNELEMS(array);
+    ArrayXd arrayxd = arraytype_to_arrayxd(array);
 
-    // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXd> arrayxd(ARRINTDATA(array), size);
-
-    return arrayxd_to_arraytype(arrayxd * scalar, size);
+    return densebase_to_float8_arraytype(arrayxd * scalar);
 }
 
 /* DISTANCE METRICS */
@@ -203,14 +167,12 @@ ArrayType *ArrayXdMulScalar(ArrayType *array, int scalar)
 extern "C"
 double ArrayXdEuclidean(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXd> arrayxd1(ARRINTDATA(a1), size);
-    Map<ArrayXd> arrayxd2(ARRINTDATA(a2), size);
+    ArrayXd arrayxd1 = arraytype_to_arrayxd(a1);
+    ArrayXd arrayxd2 = arraytype_to_arrayxd(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxd1,arrayxd2);
 
     return sqrt((arrayxd1-arrayxd2).square().sum());
 }
@@ -219,14 +181,12 @@ double ArrayXdEuclidean(ArrayType *a1, ArrayType *a2)
 extern "C"
 double ArrayXdManhattan(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXd> arrayxd1(ARRINTDATA(a1), size);
-    Map<ArrayXd> arrayxd2(ARRINTDATA(a2), size);
+    ArrayXd arrayxd1 = arraytype_to_arrayxd(a1);
+    ArrayXd arrayxd2 = arraytype_to_arrayxd(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxd1,arrayxd2);
 
     return (arrayxd1-arrayxd2).abs().sum();
 }
@@ -235,14 +195,12 @@ double ArrayXdManhattan(ArrayType *a1, ArrayType *a2)
 extern "C"
 double ArrayXdUSRSim(ArrayType *a1, ArrayType *a2)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXd> arrayxd1(ARRINTDATA(a1), size);
-    Map<ArrayXd> arrayxd2(ARRINTDATA(a2), size);
+    ArrayXd arrayxd1 = arraytype_to_arrayxd(a1);
+    ArrayXd arrayxd2 = arraytype_to_arrayxd(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxd1,arrayxd2);
 
     return (arrayxd1-arrayxd2).abs().sum() / 12.0;
 }
@@ -251,14 +209,12 @@ double ArrayXdUSRSim(ArrayType *a1, ArrayType *a2)
 extern "C"
 double ArrayXdUSRCatSim(ArrayType *a1, ArrayType *a2, float ow, float hw, float rw, float aw, float dw)
 {
-    // GET NUMBER OF ELEMENTS IN FIRST ARRAY
-    int size = ARRNELEMS(a1);
-
-    ARREQSIZE(size, ARRNELEMS(a2));
-
     // MAP DATA TO EIGEN ARRAYS
-    Map<ArrayXd> arrayxd1(ARRINTDATA(a1), size);
-    Map<ArrayXd> arrayxd2(ARRINTDATA(a2), size);
+    ArrayXd arrayxd1 = arraytype_to_arrayxd(a1);
+    ArrayXd arrayxd2 = arraytype_to_arrayxd(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxd1,arrayxd2);
 
     double weights = ow * (arrayxd1.segment(0,12) - arrayxd2.segment(0,12)).abs().sum() +
                      hw * (arrayxd1.segment(12,12) - arrayxd2.segment(12,12)).abs().sum() +

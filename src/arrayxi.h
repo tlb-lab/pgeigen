@@ -5,18 +5,9 @@ extern "C"
 
     #include "postgres.h"
     #include "utils/array.h"
-    #include "catalog/pg_type.h"
 
     #define PG_GETARG_TEXT_AS_CSTRING(x)    (text_to_cstring(PG_GETARG_TEXT_PP(x)))
     
-    #define ARRINTDATA(array)       ((int *)ARR_DATA_PTR(array))
-    #define ARRNELEMS(x)            ArrayGetNItems( ARR_NDIM(x), ARR_DIMS(x))
-    #define ARREQSIZE(a,b)          if (a != b) ereport(ERROR, (errcode(ERRCODE_DATA_EXCEPTION), errmsg("arrays must have the same number of elements.")))
-    
-    #define INTERSECT_SIZE(a,b)     ((a > 0) == (b > 0)).select(a, 0).count();
-    #define UNIQUE_LEFT_SIZE(a,b)   ((a > 0) != (b > 0)).select(a,0).count()
-    #define UNIQUE_RIGHT_SIZE(a,b)  ((a > 0) != (b > 0)).select(b,0).count()
-
     // ARRAYXI SIMILARITY METRICS DEFAULT VALUES
     extern float4 arrayxi_dice_limit;
     extern float4 arrayxi_euclidean_limit;
