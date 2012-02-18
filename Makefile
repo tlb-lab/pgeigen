@@ -1,6 +1,3 @@
-# LINK NECESSARY LIBRARIES AND HEADER FILES
-PG_CPPFLAGS += -I${EIGEN}
-
 MODULE_big  = eigen
 EXTENSION   = eigen
 EXTVERSION  = $(shell grep default_version $(EXTENSION).control | sed -e "s/default_version[[:space:]]*=[[:space:]]*'\([^']*\)'/\1/")
