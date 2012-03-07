@@ -216,6 +216,14 @@ double ArrayXdUSRCatSim(ArrayType *a1, ArrayType *a2, float ow, float hw, float 
     // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
     EigenBaseEqSize(arrayxd1,arrayxd2);
 
+    // both arrays must have exactly 60 elements otherwise bad things happen
+    if (arrayxd1.size() != 60)
+    {
+        ereport(ERROR, (errcode(ERRCODE_DATA_EXCEPTION), 
+                        errmsg("cannot calculate USRCAT similarity: both arrays must have exactly 60 elements.")));
+    }
+
+    // 
     double weights = ow * (arrayxd1.segment(0,12) - arrayxd2.segment(0,12)).abs().sum() +
                      hw * (arrayxd1.segment(12,12) - arrayxd2.segment(12,12)).abs().sum() +
                      rw * (arrayxd1.segment(24,12) - arrayxd2.segment(24,12)).abs().sum() +
