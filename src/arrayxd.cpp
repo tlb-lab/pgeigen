@@ -202,7 +202,7 @@ double ArrayXdUSRSim(ArrayType *a1, ArrayType *a2)
     // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
     EigenBaseEqSize(arrayxd1,arrayxd2);
 
-    return (arrayxd1-arrayxd2).abs().sum() / 12.0;
+    return 1.0 / (1.0 + (arrayxd1-arrayxd2).abs().sum() / arrayxd1.size());
 }
 
 // RETURNS THE WEIGHTED USR MANHATTAN DISTANCE BETWEEN THE TWO ARRAYS / USRCAT VERSION WITH 60 VALUES
