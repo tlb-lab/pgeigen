@@ -222,5 +222,5 @@ double ArrayXdUSRCatSim(ArrayType *a1, ArrayType *a2, float ow, float hw, float 
                      aw * (arrayxd1.segment(36,12) - arrayxd2.segment(36,12)).abs().sum() +
                      dw * (arrayxd1.segment(48,12) - arrayxd2.segment(48,12)).abs().sum();
 
-    return  1.0 / (1.0 + weights);
+    return  1.0 / (1.0 + weights / arrayxd1.size());
 }
