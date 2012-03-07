@@ -21,7 +21,8 @@ COMMENT ON FUNCTION array_has_nulls(anyarray) IS 'Returns true if the array cont
 
 CREATE  DOMAIN vector3d AS _float8
         CONSTRAINT onedimensional CHECK(ARRAY_NDIMS(VALUE) = 1)
-        CONSTRAINT nonulls CHECK(array_has_nulls(VALUE) = FALSE);
+        CONSTRAINT nonulls CHECK(array_has_nulls(VALUE) = FALSE)
+        CONSTRAINT xyz CHECK(array_upper(VALUE,1) = 3);
 
 COMMENT ON DOMAIN vector3d IS 
     'three-dimensional vector of double precision floats.';
