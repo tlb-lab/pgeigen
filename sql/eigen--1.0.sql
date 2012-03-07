@@ -1179,83 +1179,83 @@ COMMENT ON OPERATOR %^?(arrayxi, arrayxi) IS
     'Returns true if the Tversky similarity between two arrays is above the user-set limit.';
 
 
---------POSTGRESQL ARRAYXI DATA TYPE GIST FUNCTIONS AND OPERATOR CLASS----------
-
-
-CREATE  FUNCTION gist_arrayxi_consistent(internal, arrayxi, smallint, oid, internal)
-        RETURNS bool
-        AS '$libdir/eigen'
-        LANGUAGE C STRICT;
-
-
-CREATE  FUNCTION gist_arrayxi_union(internal, internal)
-        RETURNS internal
-        AS '$libdir/eigen'
-        LANGUAGE C STRICT;
-
-
-CREATE  FUNCTION gist_arrayxi_compress(internal)
-        RETURNS internal
-        AS '$libdir/eigen'
-        LANGUAGE C STRICT;
-
-
-CREATE  FUNCTION gist_arrayxi_decompress(internal)
-        RETURNS internal
-        AS '$libdir/eigen'
-        LANGUAGE C STRICT;
-
-
-CREATE  FUNCTION gist_arrayxi_penalty(internal, internal, internal)
-        RETURNS internal
-        AS '$libdir/eigen'
-        LANGUAGE C STRICT;
-
-
-CREATE  FUNCTION gist_arrayxi_picksplit(internal, internal)
-        RETURNS internal
-        AS '$libdir/eigen'
-        LANGUAGE C STRICT;
-
-
-CREATE  FUNCTION gist_arrayxi_same(internal, internal, internal)
-        RETURNS internal
-        AS '$libdir/eigen'
-        LANGUAGE C STRICT;
-        
-        
-CREATE  FUNCTION gist_arrayxi_distance(internal, arrayxi, smallint, oid)
-        RETURNS float8
-        AS '$libdir/eigen'
-        LANGUAGE C STRICT;
-
-
-CREATE  OPERATOR CLASS arrayxi_gist_ops
-DEFAULT FOR TYPE arrayxi USING gist AS
-        OPERATOR  1  #?   (arrayxi,arrayxi), -- DICE SIMILARITY ABOVE LIMIT?
-        OPERATOR  2  ->?  (arrayxi,arrayxi), -- EUCLIDEAN ...
-        OPERATOR  3  %?   (arrayxi,arrayxi), -- KULCZ ...
-        OPERATOR  4  ~>?  (arrayxi,arrayxi), -- MANHATTAN ...
-        OPERATOR  5  @?   (arrayxi,arrayxi), -- OCHIAI ..
-        OPERATOR  6  ^?   (arrayxi,arrayxi), -- RUSSELL RAO ...
-        OPERATOR  7  ^^?  (arrayxi,arrayxi), -- SIMPSON ...
-        OPERATOR  8  %^?  (arrayxi,arrayxi), -- TVERSKY ...
-        OPERATOR  9  <#>  FOR ORDER BY pg_catalog.float_ops, -- DICE KNN-GIST
-        OPERATOR 10  <->  FOR ORDER BY pg_catalog.float_ops, -- EUCLIDEAN KNN-GIST
-        OPERATOR 11  <%>  FOR ORDER BY pg_catalog.float_ops, -- KULCZ KNN-GIST
-        OPERATOR 12  <~>  FOR ORDER BY pg_catalog.float_ops, -- MANHATTAN KNN-GIST
-        OPERATOR 13  <@>  FOR ORDER BY pg_catalog.float_ops, -- OCHIAI KNN-GIST
-        OPERATOR 14  <^>  FOR ORDER BY pg_catalog.float_ops, -- RUSSELL-RAO KNN-GIST
-        OPERATOR 15  <^^> FOR ORDER BY pg_catalog.float_ops, -- SIMPSON KNN-GIST
-        OPERATOR 16  <%^> FOR ORDER BY pg_catalog.float_ops, -- TVERSKY KNN-GIST
-        FUNCTION  1  gist_arrayxi_consistent(internal, arrayxi, smallint, oid, internal),
-        FUNCTION  2  gist_arrayxi_union(internal, internal),
-        FUNCTION  3  gist_arrayxi_compress(internal),
-        FUNCTION  4  gist_arrayxi_decompress(internal),
-        FUNCTION  5  gist_arrayxi_penalty(internal, internal, internal),
-        FUNCTION  6  gist_arrayxi_picksplit(internal, internal),
-        FUNCTION  7  gist_arrayxi_same(internal, internal, internal),
-        FUNCTION  8  (arrayxi, arrayxi) gist_arrayxi_distance(internal, arrayxi, smallint, oid);
+-- -- --------POSTGRESQL ARRAYXI DATA TYPE GIST FUNCTIONS AND OPERATOR CLASS----------
+-- -- 
+-- -- 
+-- -- CREATE  FUNCTION gist_arrayxi_consistent(internal, arrayxi, smallint, oid, internal)
+-- --         RETURNS bool
+-- --         AS '$libdir/eigen'
+-- --         LANGUAGE C STRICT;
+-- -- 
+-- -- 
+-- -- CREATE  FUNCTION gist_arrayxi_union(internal, internal)
+-- --         RETURNS internal
+-- --         AS '$libdir/eigen'
+-- --         LANGUAGE C STRICT;
+-- -- 
+-- -- 
+-- -- CREATE  FUNCTION gist_arrayxi_compress(internal)
+-- --         RETURNS internal
+-- --         AS '$libdir/eigen'
+-- --         LANGUAGE C STRICT;
+-- -- 
+-- -- 
+-- -- CREATE  FUNCTION gist_arrayxi_decompress(internal)
+-- --         RETURNS internal
+-- --         AS '$libdir/eigen'
+-- --         LANGUAGE C STRICT;
+-- -- 
+-- -- 
+-- -- CREATE  FUNCTION gist_arrayxi_penalty(internal, internal, internal)
+-- --         RETURNS internal
+-- --         AS '$libdir/eigen'
+-- --         LANGUAGE C STRICT;
+-- -- 
+-- -- 
+-- -- CREATE  FUNCTION gist_arrayxi_picksplit(internal, internal)
+-- --         RETURNS internal
+-- --         AS '$libdir/eigen'
+-- --         LANGUAGE C STRICT;
+-- -- 
+-- -- 
+-- -- CREATE  FUNCTION gist_arrayxi_same(internal, internal, internal)
+-- --         RETURNS internal
+-- --         AS '$libdir/eigen'
+-- --         LANGUAGE C STRICT;
+-- --         
+-- --         
+-- -- CREATE  FUNCTION gist_arrayxi_distance(internal, arrayxi, smallint, oid)
+-- --         RETURNS float8
+-- --         AS '$libdir/eigen'
+-- --         LANGUAGE C STRICT;
+-- -- 
+-- -- 
+-- -- CREATE  OPERATOR CLASS arrayxi_gist_ops
+-- -- DEFAULT FOR TYPE arrayxi USING gist AS
+-- --         OPERATOR  1  #?   (arrayxi,arrayxi), -- DICE SIMILARITY ABOVE LIMIT?
+-- --         OPERATOR  2  ->?  (arrayxi,arrayxi), -- EUCLIDEAN ...
+-- --         OPERATOR  3  %?   (arrayxi,arrayxi), -- KULCZ ...
+-- --         OPERATOR  4  ~>?  (arrayxi,arrayxi), -- MANHATTAN ...
+-- --         OPERATOR  5  @?   (arrayxi,arrayxi), -- OCHIAI ..
+-- --         OPERATOR  6  ^?   (arrayxi,arrayxi), -- RUSSELL RAO ...
+-- --         OPERATOR  7  ^^?  (arrayxi,arrayxi), -- SIMPSON ...
+-- --         OPERATOR  8  %^?  (arrayxi,arrayxi), -- TVERSKY ...
+-- --         OPERATOR  9  <#>  FOR ORDER BY pg_catalog.float_ops, -- DICE KNN-GIST
+-- --         OPERATOR 10  <->  FOR ORDER BY pg_catalog.float_ops, -- EUCLIDEAN KNN-GIST
+-- --         OPERATOR 11  <%>  FOR ORDER BY pg_catalog.float_ops, -- KULCZ KNN-GIST
+-- --         OPERATOR 12  <~>  FOR ORDER BY pg_catalog.float_ops, -- MANHATTAN KNN-GIST
+-- --         OPERATOR 13  <@>  FOR ORDER BY pg_catalog.float_ops, -- OCHIAI KNN-GIST
+-- --         OPERATOR 14  <^>  FOR ORDER BY pg_catalog.float_ops, -- RUSSELL-RAO KNN-GIST
+-- --         OPERATOR 15  <^^> FOR ORDER BY pg_catalog.float_ops, -- SIMPSON KNN-GIST
+-- --         OPERATOR 16  <%^> FOR ORDER BY pg_catalog.float_ops, -- TVERSKY KNN-GIST
+-- --         FUNCTION  1  gist_arrayxi_consistent(internal, arrayxi, smallint, oid, internal),
+-- --         FUNCTION  2  gist_arrayxi_union(internal, internal),
+-- --         FUNCTION  3  gist_arrayxi_compress(internal),
+-- --         FUNCTION  4  gist_arrayxi_decompress(internal),
+-- --         FUNCTION  5  gist_arrayxi_penalty(internal, internal, internal),
+-- --         FUNCTION  6  gist_arrayxi_picksplit(internal, internal),
+-- --         FUNCTION  7  gist_arrayxi_same(internal, internal, internal),
+-- --         FUNCTION  8  (arrayxi, arrayxi) gist_arrayxi_distance(internal, arrayxi, smallint, oid);
 
 
 
