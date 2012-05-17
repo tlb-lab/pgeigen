@@ -11,7 +11,7 @@ Datum array_has_nulls(PG_FUNCTION_ARGS)
 {
     ArrayType  *array = PG_GETARG_ARRAYTYPE_P(0);
 
-    PG_RETURN_BOOL(ArrayGetNItems(ARR_NDIM(array), ARR_DIMS(array)) == 0);
+    PG_RETURN_BOOL(array_contains_nulls(array));
 }
 
 
