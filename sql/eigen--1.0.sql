@@ -256,62 +256,43 @@ CREATE  AGGREGATE sum(vector3d) (
 COMMENT ON AGGREGATE sum(vector3d) IS
     'Sums vectors.';
 
-/*
-CREATE  FUNCTION sum(vector3d[]) RETURNS vector3d AS
-        $$
-        SELECT  sum($1[i])
-        FROM    generate_series(
-                                array_lower($1,1),
-                                array_upper($1,1)
-                               ) g(i);
-        $$
-        LANGUAGE SQL IMMUTABLE STRICT;
+CREATE  AGGREGATE concat(vector3d) (
+	SFUNC=public.matrixxd_vstack,
+	STYPE=matrixxd,
+	INITCOND='{}');
 
-COMMENT ON FUNCTION sum(vector3d[]) IS
-    'Sums all vectors in an array.';
-
-
-CREATE  FUNCTION vector3d_avg(vector3d[]) RETURNS vector3d AS
-        $$
-        SELECT SUM($1) / ARRAY_LENGTH($1,1)
-        $$
-        LANGUAGE SQL IMMUTABLE STRICT;
-
-COMMENT ON FUNCTION vector3d_avg(vector3d[]) IS
-    'Returns the average vector of all vectors in array.';
-
-CREATE  AGGREGATE avg(vector3d) (
-        sfunc = array_append,
-        stype = vector3d[],
-        finalfunc = vector3d_avg,
-        initcond = '{}');
-
-COMMENT ON AGGREGATE avg(vector3d) IS
-    'Averages vectors.';
-
-
-CREATE  FUNCTION three_point_normal(vector3d[]) RETURNS SETOF vector3d AS
+COMMENT ON AGGREGATE sum(vector3d) IS
+    'Concatenates vectors.';
+	
+	
+CREATE  OR REPLACE FUNCTION three_point_normal(DOUBLE PRECISION[]) RETURNS vector3d AS
         $$
         DECLARE
             vectors ALIAS FOR $1;
+            A vector3d;
+            B vector3d;
+            C vector3d;
             AB vector3d;
             AC vector3d;
             normal vector3d;
         BEGIN
-            AB := vectors[1] - vectors[2];
-            AC := vectors[1] - vectors[3];
+            A := vectors[1:3];
+            B := vectors[4:6];
+            C := vectors[7:9];
+            
+            AB := A - B;
+            AC := A - C;
 
             -- NORMALIZED CROSS PRODUCT
-            normal := vector3d_normalize(AB # AC);
+            normal := vector3d_normalized(AB # AC);
 
-            RETURN NEXT normal;
-            RETURN;
+            RETURN normal;
         END;
         $$
         LANGUAGE plpgsql;
 
 COMMENT ON FUNCTION three_point_normal(vector3d[]) IS 
-    'Calculates the normal vector of a PLANAR ring using the first three atoms.';*/
+    'Calculates the normal vector of a PLANAR ring using the first three atoms.';
 
 
 
