@@ -32,9 +32,6 @@ MatrixXd arraytype_to_matrixxd(ArrayType *array)
             cols = arraytype_dim_num_elems(2, dmns, lbds); 
         }
         
-        ereport(NOTICE, (errcode(ERRCODE_DATA_EXCEPTION), 
-                        errmsg("rows: %i cols: %i.", rows, cols)));
-        
         // MAP POSTGRESQL ARRAY TO MATRIX
         Map<MatrixXd> matrixxd((double *) ARR_DATA_PTR(array), rows, cols);
         
