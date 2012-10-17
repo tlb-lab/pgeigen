@@ -7,9 +7,9 @@
 using namespace Eigen;
 
 // CONVERTS A POSTGRESQL ARRAYTYPE INTO AN EIGEN MATRIX OF DOUBLES
-MatrixXd arraytype_to_matrixxd(ArrayType *array)
+MatrixRowMajorXd arraytype_to_matrixxd(ArrayType *array)
 {
-    MatrixXd matrixxd;
+    MatrixRowMajorXd matrixxd;
     
     // CHECK IF ARRAY IS NOT EMPTY
     if (!arraytype_is_empty(array))
@@ -33,7 +33,7 @@ MatrixXd arraytype_to_matrixxd(ArrayType *array)
         }
         
         // MAP POSTGRESQL ARRAY TO MATRIX
-        Map<MatrixXd> matrixxd((double *) ARR_DATA_PTR(array), rows, cols);
+        Map<MatrixRowMajorXd> matrixxd((double *) ARR_DATA_PTR(array), rows, cols);
         
         return matrixxd;
     }
@@ -50,7 +50,7 @@ extern "C"
 ArrayType *MatrixXdConstant(int rows, int cols, double value)
 {
     // INITIALIZE ARRAY ACCORDING TO THE GIVEN SIZE
-    MatrixXd matrixxd = MatrixXd::Constant(rows, cols, value);
+    MatrixRowMajorXd matrixxd = MatrixRowMajorXd::Constant(rows, cols, value);
 
     return densebase_to_float8_arraytype(matrixxd);
 }
@@ -60,7 +60,7 @@ extern "C"
 ArrayType *MatrixXdIdentity(int rows, int cols)
 {
     // INITIALIZE ARRAY ACCORDING TO THE GIVEN SIZE
-    MatrixXd matrixxd = MatrixXd::Identity(rows, cols);
+    MatrixRowMajorXd matrixxd = MatrixRowMajorXd::Identity(rows, cols);
 
     return densebase_to_float8_arraytype(matrixxd);
 }
@@ -70,7 +70,7 @@ extern "C"
 ArrayType *MatrixXdRandom(int rows, int cols)
 {
     // INITIALIZE ARRAY ACCORDING TO THE GIVEN SIZE
-    MatrixXd matrixxd = MatrixXd::Random(rows, cols);
+    MatrixRowMajorXd matrixxd = MatrixRowMajorXd::Random(rows, cols);
 
     return densebase_to_float8_arraytype(matrixxd);
 }
@@ -83,7 +83,7 @@ ArrayType *MatrixXdRandom(int rows, int cols)
 extern "C"
 unsigned int MatrixXdSize(ArrayType *array)
 {
-    MatrixXd matrixxd = arraytype_to_matrixxd(array);
+    MatrixRowMajorXd matrixxd = arraytype_to_matrixxd(array);
 
     // RETURNS THE TOTAL NUMBER OF COEFFICIENTS
     return matrixxd.size();
@@ -94,7 +94,7 @@ unsigned int MatrixXdSize(ArrayType *array)
 extern "C"
 bool MatrixXdIsIdentity(ArrayType *array, double precision)
 {
-    MatrixXd matrixxd = arraytype_to_matrixxd(array);
+    MatrixRowMajorXd matrixxd = arraytype_to_matrixxd(array);
     
     return matrixxd.isIdentity(precision);
 }
@@ -107,8 +107,8 @@ bool MatrixXdIsIdentity(ArrayType *array, double precision)
 extern "C"
 ArrayType *MatrixXdAdd(ArrayType *a1, ArrayType *a2)
 {
-    MatrixXd m1 = arraytype_to_matrixxd(a1);
-    MatrixXd m2 = arraytype_to_matrixxd(a2);
+    MatrixRowMajorXd m1 = arraytype_to_matrixxd(a1);
+    MatrixRowMajorXd m2 = arraytype_to_matrixxd(a2);
     
     return densebase_to_float8_arraytype(m1 + m2);
 }
@@ -117,8 +117,8 @@ ArrayType *MatrixXdAdd(ArrayType *a1, ArrayType *a2)
 extern "C"
 ArrayType *MatrixXdSubtract(ArrayType *a1, ArrayType *a2)
 {
-    MatrixXd m1 = arraytype_to_matrixxd(a1);
-    MatrixXd m2 = arraytype_to_matrixxd(a2);
+    MatrixRowMajorXd m1 = arraytype_to_matrixxd(a1);
+    MatrixRowMajorXd m2 = arraytype_to_matrixxd(a2);
     
     return densebase_to_float8_arraytype(m1 - m2);
 }
@@ -127,8 +127,8 @@ ArrayType *MatrixXdSubtract(ArrayType *a1, ArrayType *a2)
 extern "C"
 ArrayType *MatrixXdMultiply(ArrayType *a1, ArrayType *a2)
 {
-    MatrixXd m1 = arraytype_to_matrixxd(a1);
-    MatrixXd m2 = arraytype_to_matrixxd(a2);
+    MatrixRowMajorXd m1 = arraytype_to_matrixxd(a1);
+    MatrixRowMajorXd m2 = arraytype_to_matrixxd(a2);
     
     return densebase_to_float8_arraytype(m1 * m2);
 }
@@ -137,7 +137,7 @@ ArrayType *MatrixXdMultiply(ArrayType *a1, ArrayType *a2)
 extern "C"
 ArrayType *MatrixXdScalarProduct(ArrayType *array, double scalar)
 {
-    MatrixXd matrixxd = arraytype_to_matrixxd(array);
+    MatrixRowMajorXd matrixxd = arraytype_to_matrixxd(array);
     
     return densebase_to_float8_arraytype(matrixxd * scalar);
 }
@@ -146,7 +146,7 @@ ArrayType *MatrixXdScalarProduct(ArrayType *array, double scalar)
 extern "C"
 ArrayType *MatrixXdScalarDivision(ArrayType *array, double scalar)
 {
-    MatrixXd matrixxd = arraytype_to_matrixxd(array);
+    MatrixRowMajorXd matrixxd = arraytype_to_matrixxd(array);
     
     return densebase_to_float8_arraytype(matrixxd / scalar);
 }
@@ -159,7 +159,7 @@ ArrayType *MatrixXdScalarDivision(ArrayType *array, double scalar)
 extern "C"
 ArrayType *MatrixXdColWiseSum(ArrayType *array)
 {
-    MatrixXd matrixxd = arraytype_to_matrixxd(array);
+    MatrixRowMajorXd matrixxd = arraytype_to_matrixxd(array);
     
     return densebase_to_float8_arraytype(matrixxd.colwise().sum());
 }
@@ -168,7 +168,7 @@ ArrayType *MatrixXdColWiseSum(ArrayType *array)
 extern "C"
 ArrayType *MatrixXdColWiseMean(ArrayType *array)
 {
-    MatrixXd matrixxd = arraytype_to_matrixxd(array);
+    MatrixRowMajorXd matrixxd = arraytype_to_matrixxd(array);
     
     return densebase_to_float8_arraytype(matrixxd.colwise().mean());
 }
@@ -181,7 +181,7 @@ ArrayType *MatrixXdColWiseMean(ArrayType *array)
 extern "C"
 ArrayType *MatrixXdRowWiseSum(ArrayType *array)
 {
-    MatrixXd matrixxd = arraytype_to_matrixxd(array);
+    MatrixRowMajorXd matrixxd = arraytype_to_matrixxd(array);
     
     return densebase_to_float8_arraytype(matrixxd.rowwise().sum());
 }
@@ -190,7 +190,7 @@ ArrayType *MatrixXdRowWiseSum(ArrayType *array)
 extern "C"
 ArrayType *MatrixXdRowWiseMean(ArrayType *array)
 {
-    MatrixXd matrixxd = arraytype_to_matrixxd(array);
+    MatrixRowMajorXd matrixxd = arraytype_to_matrixxd(array);
     
     return densebase_to_float8_arraytype(matrixxd.rowwise().mean());
 }
@@ -203,8 +203,8 @@ ArrayType *MatrixXdRowWiseMean(ArrayType *array)
 extern "C"
 ArrayType *MatrixXdHStack(ArrayType *a1, ArrayType *a2)
 {
-    MatrixXd m1 = arraytype_to_matrixxd(a1);
-    MatrixXd m2 = arraytype_to_matrixxd(a2);
+    MatrixRowMajorXd m1 = arraytype_to_matrixxd(a1);
+    MatrixRowMajorXd m2 = arraytype_to_matrixxd(a2);
 
     // RETURN THE OTHER MATRIX IF ONE OF THEM IS EMPTY
     if (m1.size() == 0) return a2;
@@ -223,15 +223,8 @@ ArrayType *MatrixXdHStack(ArrayType *a1, ArrayType *a2)
 extern "C"
 ArrayType *MatrixXdVStack(ArrayType *a1, ArrayType *a2)
 {
-    MatrixXd m1 = arraytype_to_matrixxd(a1);
-    MatrixXd m2 = arraytype_to_matrixxd(a2);
-    
-    MatrixXd m3;
-    m3.resize(m1.rows() + m2.rows(), m1.cols());
-    
-    std::cout << m3.rows() << "x" << m3.cols() << std::endl;
-    
-    m3 << m1, m2;
+    MatrixRowMajorXd m1 = arraytype_to_matrixxd(a1);
+    MatrixRowMajorXd m2 = arraytype_to_matrixxd(a2);
     
     // RETURN THE OTHER MATRIX IF ONE OF THEM IS EMPTY
     if (m1.size() == 0) return a2;
@@ -250,7 +243,7 @@ ArrayType *MatrixXdVStack(ArrayType *a1, ArrayType *a2)
 extern "C"
 ArrayType *MatrixXdHStackVector3d(ArrayType *matrix, ArrayType *vector)
 {
-    MatrixXd matrixxd = arraytype_to_matrixxd(matrix);
+    MatrixRowMajorXd matrixxd = arraytype_to_matrixxd(matrix);
     Map<RowVector3d> vector3d((double *) ARR_DATA_PTR(vector), 3);
 
     // RETURN THE OTHER TYPE IF ONE OF THEM IS EMPTY
@@ -271,7 +264,7 @@ ArrayType *MatrixXdHStackVector3d(ArrayType *matrix, ArrayType *vector)
 extern "C"
 ArrayType *MatrixXdVStackVector3d(ArrayType *matrix, ArrayType *vector)
 {
-    MatrixXd matrixxd = arraytype_to_matrixxd(matrix);
+    MatrixRowMajorXd matrixxd = arraytype_to_matrixxd(matrix);
     Map<RowVector3d> vector3d((double *) ARR_DATA_PTR(vector), 3);
 
     // RETURN THE OTHER TYPE IF ONE OF THEM IS EMPTY

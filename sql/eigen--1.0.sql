@@ -24,10 +24,18 @@ CREATE  DOMAIN vector3d AS _float8
         CONSTRAINT nonulls CHECK(array_has_nulls(VALUE) = FALSE)
         CONSTRAINT xyz CHECK(array_upper(VALUE,1) = 3);
 
-COMMENT ON DOMAIN vector3d IS 
+COMMENT ON DOMAIN vector3d IS
     'three-dimensional vector of double precision floats.';
 
 
+CREATE  DOMAIN matrixxd AS _float8
+        CONSTRAINT twodimensional CHECK(ARRAY_NDIMS(VALUE) <= 2)
+        CONSTRAINT nonulls CHECK(array_has_nulls(VALUE) = FALSE);
+
+COMMENT ON TYPE matrixxd IS
+    'Two-dimensional matrix of double precision floats. Can be one-dimensional if the matrix has only one row.';
+  
+    
 CREATE  FUNCTION vector3d_constant(value DOUBLE PRECISION)
         RETURNS vector3d
         AS '$libdir/eigen'
@@ -255,17 +263,9 @@ CREATE  AGGREGATE sum(vector3d) (
 
 COMMENT ON AGGREGATE sum(vector3d) IS
     'Sums vectors.';
+   
 
-CREATE  AGGREGATE concat(vector3d) (
-	SFUNC=public.matrixxd_vstack,
-	STYPE=matrixxd,
-	INITCOND='{}');
-
-COMMENT ON AGGREGATE sum(vector3d) IS
-    'Concatenates vectors.';
-	
-	
-CREATE  OR REPLACE FUNCTION three_point_normal(DOUBLE PRECISION[]) RETURNS vector3d AS
+CREATE  FUNCTION three_point_normal(DOUBLE PRECISION[]) RETURNS vector3d AS
         $$
         DECLARE
             vectors ALIAS FOR $1;
@@ -279,7 +279,7 @@ CREATE  OR REPLACE FUNCTION three_point_normal(DOUBLE PRECISION[]) RETURNS vecto
             A := vectors[1:3];
             B := vectors[4:6];
             C := vectors[7:9];
-            
+
             AB := A - B;
             AC := A - C;
 
@@ -291,7 +291,7 @@ CREATE  OR REPLACE FUNCTION three_point_normal(DOUBLE PRECISION[]) RETURNS vecto
         $$
         LANGUAGE plpgsql;
 
-COMMENT ON FUNCTION three_point_normal(vector3d[]) IS 
+COMMENT ON FUNCTION three_point_normal(DOUBLE PRECISION[]) IS
     'Calculates the normal vector of a PLANAR ring using the first three atoms.';
 
 
@@ -412,7 +412,7 @@ CREATE  FUNCTION arrayxi_add(arrayxi, arrayxi)
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION arrayxi_add(arrayxi, arrayxi) 
+COMMENT ON FUNCTION arrayxi_add(arrayxi, arrayxi)
     IS 'Adds two arrays elementwise.';
 
 
@@ -422,7 +422,7 @@ CREATE  OPERATOR + (
         RIGHTARG = arrayxi,
         COMMUTATOR = +);
 
-COMMENT ON OPERATOR +(arrayxi, arrayxi) 
+COMMENT ON OPERATOR +(arrayxi, arrayxi)
     IS 'Adds the first array to the first.';
 
 
@@ -431,7 +431,7 @@ CREATE  FUNCTION arrayxi_add(arrayxi, scalar INTEGER)
         AS '$libdir/eigen', 'arrayxi_add_scalar'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION arrayxi_add(arrayxi, scalar INTEGER) IS 
+COMMENT ON FUNCTION arrayxi_add(arrayxi, scalar INTEGER) IS
     'Adds scalar to every element of array.';
 
 
@@ -441,7 +441,7 @@ CREATE  OPERATOR + (
         RIGHTARG = INTEGER,
         COMMUTATOR = +);
 
-COMMENT ON OPERATOR +(arrayxi, INTEGER) IS 
+COMMENT ON OPERATOR +(arrayxi, INTEGER) IS
     'Adds scalar to every element of array.';
 
 
@@ -450,7 +450,7 @@ CREATE  FUNCTION arrayxi_sub(arrayxi, arrayxi)
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION arrayxi_sub(arrayxi, arrayxi) IS 
+COMMENT ON FUNCTION arrayxi_sub(arrayxi, arrayxi) IS
     'Subtracts the second array from the first.';
 
 
@@ -459,7 +459,7 @@ CREATE  OPERATOR - (
         LEFTARG = arrayxi,
         RIGHTARG = arrayxi);
 
-COMMENT ON OPERATOR -(arrayxi, arrayxi) IS 
+COMMENT ON OPERATOR -(arrayxi, arrayxi) IS
     'Adds two arrays elementwise.';
 
 
@@ -468,7 +468,7 @@ CREATE  FUNCTION arrayxi_sub(arrayxi, scalar INTEGER)
         AS '$libdir/eigen', 'arrayxi_sub_scalar'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION arrayxi_sub(arrayxi, scalar INTEGER) IS 
+COMMENT ON FUNCTION arrayxi_sub(arrayxi, scalar INTEGER) IS
     'Subtracts scalar from every element of array.';
 
 CREATE  OPERATOR - (
@@ -476,7 +476,7 @@ CREATE  OPERATOR - (
         LEFTARG = arrayxi,
         RIGHTARG = INTEGER);
 
-COMMENT ON OPERATOR -(arrayxi, INTEGER) IS 
+COMMENT ON OPERATOR -(arrayxi, INTEGER) IS
     'Subtracts scalar from every element of array.';
 
 
@@ -485,7 +485,7 @@ CREATE  FUNCTION arrayxi_mul(arrayxi, arrayxi)
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION arrayxi_mul(arrayxi, arrayxi) IS 
+COMMENT ON FUNCTION arrayxi_mul(arrayxi, arrayxi) IS
     'Multiplies both arrays elementwise.';
 
 
@@ -526,7 +526,7 @@ CREATE  FUNCTION arrayxi_eq(arrayxi, arrayxi)
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION arrayxi_eq(arrayxi, arrayxi) IS 
+COMMENT ON FUNCTION arrayxi_eq(arrayxi, arrayxi) IS
     'Returns true if the elements in both arrays are equal.';
 
 
@@ -545,7 +545,7 @@ CREATE  FUNCTION arrayxi_ne(arrayxi, arrayxi)
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION arrayxi_ne(arrayxi, arrayxi) IS 
+COMMENT ON FUNCTION arrayxi_ne(arrayxi, arrayxi) IS
     'Returns true if the arrays are distinct.';
 
 
@@ -564,7 +564,7 @@ CREATE  FUNCTION arrayxi_contains(arrayxi, arrayxi)
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION arrayxi_contains(arrayxi, arrayxi) IS 
+COMMENT ON FUNCTION arrayxi_contains(arrayxi, arrayxi) IS
     'Returns true if the first array contains all elements of the second.';
 
 
@@ -826,7 +826,7 @@ COMMENT ON OPERATOR %^(arrayxi, arrayxi) IS
     'Returns the Tversky similarity between the arrays.';
 
 
------ARRAYXI DISTANCE METRICS: USED MOSTLY FOR THE KNN-GIST ORDER BY OPERATORS-----    
+-----ARRAYXI DISTANCE METRICS: USED MOSTLY FOR THE KNN-GIST ORDER BY OPERATORS-----
 
 
 CREATE FUNCTION arrayxi_dice_dist(arrayxi, arrayxi)
@@ -968,7 +968,7 @@ CREATE FUNCTION arrayxi_tversky_dist(arrayxi, arrayxi)
 
 COMMENT ON FUNCTION arrayxi_tversky_dist(arrayxi, arrayxi) IS
     'Returns the Tversky distance between two arrays. Parameters alpha and beta have to be set with the set_arrayxi_similarity_limit() function.';
-    
+
 
 CREATE  OPERATOR <%^> (
         PROCEDURE = arrayxi_tversky_dist,
@@ -977,7 +977,7 @@ CREATE  OPERATOR <%^> (
 
 COMMENT ON OPERATOR <%^>(arrayxi, arrayxi) IS
     'Returns the Tversky distance between two arrays. Parameters alpha and beta have to be set with the set_arrayxi_similarity_limit() function.';
- 
+
 
 CREATE  FUNCTION arrayxi_mean_hamming_dist(arrayxi, arrayxi)
         RETURNS DOUBLE PRECISION
@@ -997,7 +997,7 @@ COMMENT ON FUNCTION arrayxi_fuzcavsim_global(arrayxi, arrayxi) IS
     'Returns the FuzCav global similarity between the arrays.';
 
 
-----ARRAYXI BOOLEAN METRICS: COMPARES THE SIMILARITY WITH THE USER-SET LIMIT----    
+----ARRAYXI BOOLEAN METRICS: COMPARES THE SIMILARITY WITH THE USER-SET LIMIT----
 -----------------REQUIRED FOR POSTGRESQL GIST INDEX ON ARRAYXI------------------
 
 
@@ -1139,7 +1139,7 @@ CREATE  OPERATOR ^^? (
 
 COMMENT ON OPERATOR ^^?(arrayxi, arrayxi) IS
     'Returns true if the Simpson similarity between two arrays is above the user-set limit.';
-    
+
 
 CREATE FUNCTION arrayxi_tversky_is_above_limit(arrayxi, arrayxi)
     RETURNS BOOLEAN
@@ -1162,56 +1162,56 @@ COMMENT ON OPERATOR %^?(arrayxi, arrayxi) IS
 
 
 -- -- --------POSTGRESQL ARRAYXI DATA TYPE GIST FUNCTIONS AND OPERATOR CLASS----------
--- -- 
--- -- 
+-- --
+-- --
 -- -- CREATE  FUNCTION gist_arrayxi_consistent(internal, arrayxi, smallint, oid, internal)
 -- --         RETURNS bool
 -- --         AS '$libdir/eigen'
 -- --         LANGUAGE C STRICT;
--- -- 
--- -- 
+-- --
+-- --
 -- -- CREATE  FUNCTION gist_arrayxi_union(internal, internal)
 -- --         RETURNS internal
 -- --         AS '$libdir/eigen'
 -- --         LANGUAGE C STRICT;
--- -- 
--- -- 
+-- --
+-- --
 -- -- CREATE  FUNCTION gist_arrayxi_compress(internal)
 -- --         RETURNS internal
 -- --         AS '$libdir/eigen'
 -- --         LANGUAGE C STRICT;
--- -- 
--- -- 
+-- --
+-- --
 -- -- CREATE  FUNCTION gist_arrayxi_decompress(internal)
 -- --         RETURNS internal
 -- --         AS '$libdir/eigen'
 -- --         LANGUAGE C STRICT;
--- -- 
--- -- 
+-- --
+-- --
 -- -- CREATE  FUNCTION gist_arrayxi_penalty(internal, internal, internal)
 -- --         RETURNS internal
 -- --         AS '$libdir/eigen'
 -- --         LANGUAGE C STRICT;
--- -- 
--- -- 
+-- --
+-- --
 -- -- CREATE  FUNCTION gist_arrayxi_picksplit(internal, internal)
 -- --         RETURNS internal
 -- --         AS '$libdir/eigen'
 -- --         LANGUAGE C STRICT;
--- -- 
--- -- 
+-- --
+-- --
 -- -- CREATE  FUNCTION gist_arrayxi_same(internal, internal, internal)
 -- --         RETURNS internal
 -- --         AS '$libdir/eigen'
 -- --         LANGUAGE C STRICT;
--- --         
--- --         
+-- --
+-- --
 -- -- CREATE  FUNCTION gist_arrayxi_distance(internal, arrayxi, smallint, oid)
 -- --         RETURNS float8
 -- --         AS '$libdir/eigen'
 -- --         LANGUAGE C STRICT;
--- -- 
--- -- 
+-- --
+-- --
 -- -- CREATE  OPERATOR CLASS arrayxi_gist_ops
 -- -- DEFAULT FOR TYPE arrayxi USING gist AS
 -- --         OPERATOR  1  #?   (arrayxi,arrayxi), -- DICE SIMILARITY ABOVE LIMIT?
@@ -1283,7 +1283,7 @@ COMMENT ON FUNCTION arrayxd_nonzeros(arrayxd) IS
 
 
 CREATE  FUNCTION arrayxd_sum(arrayxd)
-        RETURNS BIGINT
+        RETURNS FLOAT
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
@@ -1475,15 +1475,6 @@ COMMENT ON FUNCTION arrayxd_usrcatsim(arrayxd, arrayxd, REAL, REAL, REAL, REAL, 
 --------------------------------------------------------------------------------
 
 
-
-CREATE  DOMAIN matrixxd AS _float8
-        CONSTRAINT twodimensional CHECK(ARRAY_NDIMS(VALUE) <= 2)
-        CONSTRAINT nonulls CHECK(array_has_nulls(VALUE) = FALSE);
-
-COMMENT ON TYPE matrixxd IS
-    'Two-dimensional matrix of double precision floats. Can be one-dimensional if the matrix has only one row.';
-
-
 ---------------------------MATRIX CONSTRUCTION METHODS--------------------------
 
 
@@ -1492,7 +1483,7 @@ CREATE  FUNCTION matrixxd_identity(rows INTEGER, cols INTEGER)
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION matrixxd_identity(rows INTEGER, cols INTEGER) IS 
+COMMENT ON FUNCTION matrixxd_identity(rows INTEGER, cols INTEGER) IS
     'Returns an identity matrix of the given dimensions.';
 
 
@@ -1501,7 +1492,7 @@ CREATE  FUNCTION matrixxd_constant(rows INTEGER, cols INTEGER, value DOUBLE PREC
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION matrixxd_constant(rows INTEGER, cols INTEGER, value DOUBLE PRECISION) IS 
+COMMENT ON FUNCTION matrixxd_constant(rows INTEGER, cols INTEGER, value DOUBLE PRECISION) IS
     'Returns a matrix of the given dimensions with the given coefficient.';
 
 
@@ -1510,7 +1501,7 @@ CREATE  FUNCTION matrixxd_random(rows INTEGER, cols INTEGER)
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION matrixxd_random(rows INTEGER, cols INTEGER) IS 
+COMMENT ON FUNCTION matrixxd_random(rows INTEGER, cols INTEGER) IS
     'Returns a matrix of the given dimensions with random coefficients.';
 
 
@@ -1522,7 +1513,7 @@ CREATE  FUNCTION matrixxd_is_identity(matrixxd, prec DOUBLE PRECISION DEFAULT 0.
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION matrixxd_is_identity(matrixxd, DOUBLE PRECISION) IS 
+COMMENT ON FUNCTION matrixxd_is_identity(matrixxd, DOUBLE PRECISION) IS
     'Returns true if the given matrix is approximately equal to the identity matrix (not necessarily square), within the given precision.';
 
 
@@ -1531,7 +1522,7 @@ CREATE  FUNCTION matrixxd_size(matrixxd)
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION matrixxd_size(matrixxd) IS 
+COMMENT ON FUNCTION matrixxd_size(matrixxd) IS
     'Returns the number of matrix coefficients.';
 
 
@@ -1539,7 +1530,7 @@ CREATE  OPERATOR #(
         PROCEDURE = matrixxd_size,
         RIGHTARG = matrixxd);
 
-COMMENT ON OPERATOR #(None, matrixxd) IS 
+COMMENT ON OPERATOR #(None, matrixxd) IS
     'Returns the number of matrix coefficients.';
 
 
@@ -1551,7 +1542,7 @@ CREATE  FUNCTION matrixxd_add(matrixxd, matrixxd)
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION matrixxd_add(matrixxd, matrixxd) IS 
+COMMENT ON FUNCTION matrixxd_add(matrixxd, matrixxd) IS
     'Add the two matrices together.';
 
 
@@ -1560,7 +1551,7 @@ CREATE  OPERATOR +(
         LEFTARG = matrixxd,
         RIGHTARG = matrixxd);
 
-COMMENT ON OPERATOR +(matrixxd, matrixxd) IS 
+COMMENT ON OPERATOR +(matrixxd, matrixxd) IS
     'Add the two matrices together.';
 
 
@@ -1569,7 +1560,7 @@ CREATE  FUNCTION matrixxd_subtract(matrixxd, matrixxd)
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION matrixxd_subtract(matrixxd, matrixxd) IS 
+COMMENT ON FUNCTION matrixxd_subtract(matrixxd, matrixxd) IS
     'Subtracts the second matrix from the first.';
 
 
@@ -1578,7 +1569,7 @@ CREATE  OPERATOR -(
         LEFTARG = matrixxd,
         RIGHTARG = matrixxd);
 
-COMMENT ON OPERATOR -(matrixxd, matrixxd) IS 
+COMMENT ON OPERATOR -(matrixxd, matrixxd) IS
     'Subtracts the second matrix from the first.';
 
 
@@ -1587,7 +1578,7 @@ CREATE  FUNCTION matrixxd_multiply(matrixxd, matrixxd)
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION matrixxd_multiply(matrixxd, matrixxd) IS 
+COMMENT ON FUNCTION matrixxd_multiply(matrixxd, matrixxd) IS
     'Multiplies the matrices.';
 
 
@@ -1596,7 +1587,7 @@ CREATE  OPERATOR *(
         LEFTARG = matrixxd,
         RIGHTARG = matrixxd);
 
-COMMENT ON OPERATOR *(matrixxd, matrixxd) IS 
+COMMENT ON OPERATOR *(matrixxd, matrixxd) IS
     'Multiplies the matrices.';
 
 
@@ -1605,7 +1596,7 @@ CREATE  FUNCTION matrixxd_scalar_product(matrixxd, DOUBLE PRECISION)
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION matrixxd_scalar_product(matrixxd, DOUBLE PRECISION) IS 
+COMMENT ON FUNCTION matrixxd_scalar_product(matrixxd, DOUBLE PRECISION) IS
     'Returns the scalar product.';
 
 
@@ -1615,7 +1606,7 @@ CREATE  OPERATOR *(
         LEFTARG = matrixxd,
         RIGHTARG = DOUBLE PRECISION);
 
-COMMENT ON OPERATOR *(matrixxd, DOUBLE PRECISION) IS 
+COMMENT ON OPERATOR *(matrixxd, DOUBLE PRECISION) IS
     'Returns the scalar product.';
 
 
@@ -1624,7 +1615,7 @@ CREATE  FUNCTION matrixxd_scalar_division(matrixxd, DOUBLE PRECISION)
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION matrixxd_scalar_division(matrixxd, DOUBLE PRECISION) IS 
+COMMENT ON FUNCTION matrixxd_scalar_division(matrixxd, DOUBLE PRECISION) IS
     'Returns the scalar division';
 
 
@@ -1633,7 +1624,7 @@ CREATE  OPERATOR /(
         LEFTARG = matrixxd,
         RIGHTARG = DOUBLE PRECISION);
 
-COMMENT ON OPERATOR /(matrixxd, DOUBLE PRECISION) IS 
+COMMENT ON OPERATOR /(matrixxd, DOUBLE PRECISION) IS
     'Returns the scalar division';
 
 
@@ -1645,7 +1636,7 @@ CREATE  FUNCTION matrixxd_cw_mean(matrixxd)
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION matrixxd_cw_mean(matrixxd) IS 
+COMMENT ON FUNCTION matrixxd_cw_mean(matrixxd) IS
     'Returns the column-wise mean of the matrix';
 
 
@@ -1654,7 +1645,7 @@ CREATE  FUNCTION matrixxd_cw_sum(matrixxd)
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION matrixxd_cw_sum(matrixxd) IS 
+COMMENT ON FUNCTION matrixxd_cw_sum(matrixxd) IS
     'Returns the column-wise sum of the matrix';
 
 
@@ -1666,7 +1657,7 @@ CREATE  FUNCTION matrixxd_rw_mean(matrixxd)
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION matrixxd_rw_mean(matrixxd) IS 
+COMMENT ON FUNCTION matrixxd_rw_mean(matrixxd) IS
     'Returns the row-wise mean of the matrix';
 
 
@@ -1675,7 +1666,7 @@ CREATE  FUNCTION matrixxd_rw_sum(matrixxd)
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION matrixxd_rw_sum(matrixxd) IS 
+COMMENT ON FUNCTION matrixxd_rw_sum(matrixxd) IS
     'Returns the row-wise sum of the matrix';
 
 
@@ -1691,7 +1682,7 @@ CREATE  FUNCTION matrixxd_hstack(matrixxd, matrixxd)
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION matrixxd_hstack(matrixxd, matrixxd) IS 
+COMMENT ON FUNCTION matrixxd_hstack(matrixxd, matrixxd) IS
     'horizontally stacks the second matrix onto the first.';
 
 
@@ -1700,7 +1691,7 @@ CREATE  FUNCTION matrixxd_vstack(matrixxd, matrixxd)
         AS '$libdir/eigen'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION matrixxd_vstack(matrixxd, matrixxd) IS 
+COMMENT ON FUNCTION matrixxd_vstack(matrixxd, matrixxd) IS
     'vertically stacks the second matrix onto the first.';
 
 
@@ -1709,7 +1700,7 @@ CREATE  FUNCTION matrixxd_hstack(matrixxd, vector3d)
         AS '$libdir/eigen','matrixxd_hstack_vector3d'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION matrixxd_hstack(matrixxd, vector3d) IS 
+COMMENT ON FUNCTION matrixxd_hstack(matrixxd, vector3d) IS
     'horizontally stacks the vector3d onto the matrixxd';
 
 
@@ -1718,12 +1709,21 @@ CREATE  FUNCTION matrixxd_vstack(matrixxd, vector3d)
         AS '$libdir/eigen','matrixxd_vstack_vector3d'
         LANGUAGE C IMMUTABLE STRICT;
 
-COMMENT ON FUNCTION matrixxd_vstack(matrixxd, vector3d) IS 
+COMMENT ON FUNCTION matrixxd_vstack(matrixxd, vector3d) IS
     'vertically stacks the vector3d onto the matrixxd';
 
-
+    
 CREATE  AGGREGATE avg(vector3d) (
         sfunc = matrixxd_vstack,
         stype = matrixxd,
         finalfunc = matrixxd_cw_mean,
         initcond = '{}');
+  
+  
+CREATE  AGGREGATE concat(vector3d) (
+    SFUNC=public.matrixxd_vstack,
+    STYPE=matrixxd,
+    INITCOND='{}');
+
+COMMENT ON AGGREGATE sum(vector3d) IS
+    'Concatenates vectors horizontally.';

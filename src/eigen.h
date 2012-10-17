@@ -18,6 +18,8 @@ extern "C"
 
 using namespace Eigen;
 
+// Arrays are stored in a RowMajor manner by PostgreSQL
+typedef Matrix<double, Dynamic, Dynamic, RowMajor> MatrixRowMajorXd;
 
 /////////////////////POSTGRESQL ARRAYTYPE FUNCTIONS/////////////////////////////
 
@@ -78,7 +80,7 @@ ArrayType *densebase_to_float8_arraytype(const DenseBase<Derived> &densebase)
         dims[0] = densebase.rows();
         dims[1] = densebase.cols();
     }
-
+    
     Datum *datums = (Datum *) palloc(sizeof(Datum) * densebase.size());
     
     // THE STORAGE ORDER OF EIGEN OBJECTS DOES NOT NECESSARILY CORRESPOND
