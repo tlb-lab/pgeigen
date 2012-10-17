@@ -114,7 +114,7 @@ ArrayType *Vector3dCross(ArrayType *a1, ArrayType *a2)
     RowVector3d v1 = arraytype_to_vector3d(a1);
     RowVector3d v2 = arraytype_to_vector3d(a2);
     
-    return densebase_to_float8_arraytype(v1 - v2);
+    return densebase_to_float8_arraytype(v1.cross(v2));
 }
 
 // RETURNS THE VECTOR NORM/LENGTH
