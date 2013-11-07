@@ -1,0 +1,4 @@
+comment = 'New array types based on the Eigen numerical template library.'
+default_version = '1.0'
+module_pathname = '$libdir/eigen'
+relocatable = true
