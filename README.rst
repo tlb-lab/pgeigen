@@ -22,7 +22,7 @@ The source code for **pgeigen** can be obtained by either downloading a source p
 from the `Bitbucket <https://bitbucket.org/aschreyer/pgeigen>`_ repository or
 by cloning it with::
 
-    $ hg clone https://bitbucket.org/aschreyer/pgeigen
+    $ hg clone https://bitbucket.org/blundell/pgeigen
 
 Installing the extension
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -37,9 +37,6 @@ commands in PostgreSQL (e.g. psql or GUI tool)::
 
     $ CREATE EXTENSION eigen;
 
-Documentation
--------------
-This documentation is available from http://pgeigen.readthedocs.org (in progress). 
 
 License
 -------

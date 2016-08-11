@@ -336,17 +336,25 @@ double ArrayXiBrayCurtis(ArrayType *a1, ArrayType *a2)
 extern "C"
 double ArrayXiDice(ArrayType *a1, ArrayType *a2)
 {
+    double similarity = 0.0;
+    
     // MAP DATA TO EIGEN ARRAYS
     ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
     ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
 
     // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
     EigenBaseEqSize(arrayxi1,arrayxi2);
+    
+    // SET COUNTS ON THE INDIVIDUAL ARRAYS
+    unsigned int A = arrayxi1.count();
+    unsigned int B = arrayxi2.count();
 
     // COMMON COUNTS
     unsigned int c = intersect_size(arrayxi1,arrayxi2);
 
-    return 2 * c / (double) arrayxi1.size();
+    if (A != 0 && B != 0) similarity = 2 * c / (double) (A+B);
+    
+    return similarity;
 }
 
 // RETURNS THE KULCZYNSKI SIMILARITY
@@ -512,6 +520,32 @@ double ArrayXiSimpsonGlobal(ArrayType *a1, ArrayType *a2)
     return similarity;
 }
 
+// RETURNS THE TANIMOTO/JACCARD SIMILARITY (I.E. TVERSKY ALPHA=1, BETA=1)
+extern "C"
+double ArrayXiTanimoto(ArrayType *a1, ArrayType *a2)
+{
+    double similarity = 0.0;
+    
+    // MAP DATA TO EIGEN ARRAYS
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
+
+    // SET COUNTS ON THE INDIVIDUAL ARRAYS
+    unsigned int A = arrayxi1.count();
+    unsigned int B = arrayxi2.count();
+
+    // COMMON COUNTS
+    unsigned int c = intersect_size(arrayxi1,arrayxi2);
+
+    // AVOID DIVISION BY ZERO
+    if (A != 0 && B != 0) similarity = c / (double) (A + B - c);
+
+    return similarity;
+}
+
 // RETURNS THE TVERSKY SIMILARITY
 extern "C"
 double ArrayXiTversky(ArrayType *a1, ArrayType *a2)
@@ -537,9 +571,99 @@ double ArrayXiTversky(ArrayType *a1, ArrayType *a2)
     {
         similarity = c / (double) (arrayxi_tversky_alpha * A + 
                                   arrayxi_tversky_beta * B + 
-                                  (1 - arrayxi_tversky_alpha + arrayxi_tversky_beta) * c);
+                                  (1 - arrayxi_tversky_alpha - arrayxi_tversky_beta) * c);
     }
         
+    return similarity;
+}
+
+////////////////////////////////QUANTITATIVE/NON-BINARY METRICS///////////////////////////////
+
+// RETURNS THE TANIMOTO/JACCARD SIMILARITY
+extern "C"
+double ArrayXiTanimotoNB(ArrayType *a1, ArrayType *a2)
+{
+    double similarity = 0.0;
+    
+    // MAP DATA TO EIGEN ARRAYS
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
+
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
+    
+    ArrayXi arrayxi1_sq = arrayxi1 * arrayxi1;
+    ArrayXi arrayxi2_sq = arrayxi2 * arrayxi2;
+    ArrayXi arrayxiC_sq = arrayxi1 * arrayxi2;
+
+    unsigned int A = arrayxi1_sq.sum();
+    unsigned int B = arrayxi2_sq.sum();
+
+    unsigned int c = arrayxiC_sq.sum();
+
+    // AVOID DIVISION BY ZERO
+    if (A != 0 && B != 0) similarity = c / (double) (A + B - c);
+
+    return similarity;
+}
+
+// RETURNS THE DICE SIMILARITY
+extern "C"
+double ArrayXiDiceNB(ArrayType *a1, ArrayType *a2)
+{
+    double similarity = 0.0;
+    
+    // MAP DATA TO EIGEN ARRAYS
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
+    
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);
+    
+    // MAP DATA TO EIGEN ARRAYS
+    ArrayXi arrayxi1_sq = arrayxi1 * arrayxi1;
+    ArrayXi arrayxi2_sq = arrayxi2 * arrayxi2;
+    ArrayXi arrayxiC_sq = arrayxi1 * arrayxi2;
+    
+    // SET COUNTS ON THE INDIVIDUAL ARRAYS
+    unsigned int A = arrayxi1_sq.sum();
+    unsigned int B = arrayxi2_sq.sum();
+
+    // COMMON COUNTS
+    unsigned int c = arrayxiC_sq.sum();
+
+    if (A != 0 && B != 0) similarity = 2 * c / (double) (A+B);
+    
+    return similarity;
+}
+
+extern "C"
+double ArrayXiCosineNB(ArrayType *a1, ArrayType *a2)
+{
+    double similarity = 0.0;
+    
+    // MAP DATA TO EIGEN ARRAYS
+    ArrayXi arrayxi1 = arraytype_to_arrayxi(a1);
+    ArrayXi arrayxi2 = arraytype_to_arrayxi(a2);
+    
+    // CHECK IF ARRAYS HAVE THE SAME NUMBER OF COEFFICIENTS
+    EigenBaseEqSize(arrayxi1,arrayxi2);    
+    
+    // MAP DATA TO EIGEN ARRAYS
+    ArrayXi arrayxi1_sq = arrayxi1 * arrayxi1;
+    ArrayXi arrayxi2_sq = arrayxi2 * arrayxi2;
+    ArrayXi arrayxiC_sq = arrayxi1 * arrayxi2;
+
+    // SET COUNTS ON THE INDIVIDUAL ARRAYS
+    unsigned int A = arrayxi1_sq.sum();
+    unsigned int B = arrayxi2_sq.sum();
+
+    // COMMON COUNTS
+    unsigned int c = arrayxiC_sq.sum();
+
+    // AVOID DIVISION BY ZERO
+    if (A != 0 && B != 0) similarity = c / sqrt(A*B);
+    
     return similarity;
 }
 

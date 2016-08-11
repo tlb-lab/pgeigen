@@ -753,7 +753,7 @@ CREATE  FUNCTION arrayxi_ochiai(arrayxi, arrayxi)
         LANGUAGE C IMMUTABLE STRICT;
 
 COMMENT ON FUNCTION arrayxi_ochiai(arrayxi, arrayxi) IS
-    'Returns the Ochiai similarity between the arrays.';
+    'Returns the Ochiai/Cosine similarity between the arrays.';
 
 
 CREATE  OPERATOR @ (
@@ -763,7 +763,7 @@ CREATE  OPERATOR @ (
         COMMUTATOR = @);
 
 COMMENT ON OPERATOR @(arrayxi, arrayxi) IS
-    'Returns the Ochiai similarity between the arrays.';
+    'Returns the Ochiai/Cosine similarity between the arrays.';
 
 
 CREATE  FUNCTION arrayxi_russell_rao(arrayxi, arrayxi)
@@ -813,6 +813,15 @@ COMMENT ON FUNCTION arrayxi_simpson_global(arrayxi, arrayxi) IS
     'Returns the global Simpson similarity between the arrays.';
 
 
+CREATE  FUNCTION arrayxi_tanimoto(arrayxi, arrayxi)
+        RETURNS DOUBLE PRECISION
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION arrayxi_tanimoto(arrayxi, arrayxi) IS
+    'Returns the Tanimoto similarity between the arrays.';
+
+
 CREATE  FUNCTION arrayxi_tversky(arrayxi, arrayxi)
         RETURNS DOUBLE PRECISION
         AS '$libdir/eigen'
@@ -830,6 +839,35 @@ CREATE  OPERATOR %^ (
 
 COMMENT ON OPERATOR %^(arrayxi, arrayxi) IS
     'Returns the Tversky similarity between the arrays.';
+
+
+--------- ARRAYXI NON-BINARY/QUANTITATIVE METRICS -------
+
+CREATE  FUNCTION arrayxi_tanimoto_nb(arrayxi, arrayxi)
+        RETURNS DOUBLE PRECISION
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION arrayxi_tanimoto_nb(arrayxi, arrayxi) IS
+    'Returns the non-binary Tanimoto similarity between the arrays.';
+    
+
+CREATE  FUNCTION arrayxi_dice_nb(arrayxi, arrayxi)
+        RETURNS DOUBLE PRECISION
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION arrayxi_dice_nb(arrayxi, arrayxi) IS
+    'Returns the non-binary Dice similarity between the arrays.';
+    
+    
+CREATE  FUNCTION arrayxi_cosine_nb(arrayxi, arrayxi)
+        RETURNS DOUBLE PRECISION
+        AS '$libdir/eigen'
+        LANGUAGE C IMMUTABLE STRICT;
+
+COMMENT ON FUNCTION arrayxi_cosine_nb(arrayxi, arrayxi) IS
+    'Returns the non-binary Cosine similarity between the arrays.';
 
 
 -----ARRAYXI DISTANCE METRICS: USED MOSTLY FOR THE KNN-GIST ORDER BY OPERATORS-----
@@ -1003,6 +1041,30 @@ COMMENT ON FUNCTION arrayxi_fuzcavsim_global(arrayxi, arrayxi) IS
     'Returns the FuzCav global similarity between the arrays.';
 
 
+---- Limit checking/setting functions -----
+
+CREATE FUNCTION show_arrayxi_similarity_limit(metric text)
+    RETURNS float4
+    AS '$libdir/eigen'
+    LANGUAGE C STRICT IMMUTABLE;
+
+COMMENT ON FUNCTION show_arrayxi_similarity_limit(metric text) IS
+    'Show the current similarity limit (or Tversky factor) for a given metric.
+    Valid values: euclidean, kulczynski, manhattan, ochiai, rusell-rao, simpson,
+    tanimoto, tversky, tversky_alpha, tversky_beta.';
+
+
+CREATE FUNCTION set_arrayxi_similarity_limit(sim_limit float4, metric text)
+    RETURNS float4
+    AS '$libdir/eigen'
+    LANGUAGE C STRICT IMMUTABLE;
+
+COMMENT ON FUNCTION set_arrayxi_similarity_limit(sim_limit float4, metric text) IS
+    'Set the similarity limit (or Tversky factor) for a given metric.
+    Valid values: euclidean, kulczynski, manhattan, ochiai, rusell-rao, simpson,
+    tanimoto, tversky, tversky_alpha, tversky_beta.';
+
+    
 ----ARRAYXI BOOLEAN METRICS: COMPARES THE SIMILARITY WITH THE USER-SET LIMIT----
 -----------------REQUIRED FOR POSTGRESQL GIST INDEX ON ARRAYXI------------------
 

@@ -64,12 +64,18 @@ extern "C"
     double     ArrayXiRussellRao(ArrayType *a1, ArrayType *a2);
     double     ArrayXiSimpson(ArrayType *a1, ArrayType *a2);
     double     ArrayXiSimpsonGlobal(ArrayType *a1, ArrayType *a2);
+    double     ArrayXiTanimoto(ArrayType *a1, ArrayType *a2);
     double     ArrayXiTversky(ArrayType *a1, ArrayType *a2);
 
     float      SimilarityUpperBound(ArrayType *a1, ArrayType *a2, char *metric);
     
     // FUZCAV METRIC
     double     ArrayXiFuzCavSimGlobal(ArrayType *a1, ArrayType *a2);
+
+    // QUANTITATIVE / NON-BINARY METRICS 
+    double     ArrayXiTanimotoNB(ArrayType *a1, ArrayType *a2);
+    double     ArrayXiDiceNB(ArrayType *a1, ArrayType *a2);
+    double     ArrayXiCosineNB(ArrayType *a1, ArrayType *a2);
 
     // DISTANCE METRICS
     double     ArrayXiEuclideanDist(ArrayType *a1, ArrayType *a2);

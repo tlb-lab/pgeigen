@@ -1,7 +1,7 @@
 MODULE_big  = eigen
 EXTENSION   = eigen
 EXTVERSION  = $(shell grep default_version $(EXTENSION).control | sed -e "s/default_version[[:space:]]*=[[:space:]]*'\([^']*\)'/\1/")
-DATA        = sql/$(EXTENSION)--$(EXTVERSION).sql
+DATA        = $(wildcard sql/*.sql)
 OBJS        = $(patsubst %.c, %.o, $(wildcard src/*.c)) $(patsubst %.cpp, %.o, $(wildcard src/*.cpp))
 
 PG_CONFIG = pg_config

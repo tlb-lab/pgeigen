@@ -334,7 +334,7 @@ Datum arrayxi_ochiai(PG_FUNCTION_ARGS)
     PG_RETURN_FLOAT8(ArrayXiOchiai(a1,a2));
 }
 
-// RETURNS THE INTERSECTION BETWEEN BOTH ARRAYS
+// 
 PG_FUNCTION_INFO_V1(arrayxi_russell_rao);
 Datum arrayxi_russell_rao(PG_FUNCTION_ARGS)
 {
@@ -344,7 +344,7 @@ Datum arrayxi_russell_rao(PG_FUNCTION_ARGS)
     PG_RETURN_FLOAT8(ArrayXiRussellRao(a1,a2));
 }
 
-// RETURNS THE INTERSECTION BETWEEN BOTH ARRAYS
+// 
 PG_FUNCTION_INFO_V1(arrayxi_simpson);
 Datum arrayxi_simpson(PG_FUNCTION_ARGS)
 {
@@ -354,7 +354,7 @@ Datum arrayxi_simpson(PG_FUNCTION_ARGS)
     PG_RETURN_FLOAT8(ArrayXiSimpson(a1,a2));
 }
 
-// RETURNS THE INTERSECTION BETWEEN BOTH ARRAYS
+//
 PG_FUNCTION_INFO_V1(arrayxi_simpson_global);
 Datum arrayxi_simpson_global(PG_FUNCTION_ARGS)
 {
@@ -364,7 +364,17 @@ Datum arrayxi_simpson_global(PG_FUNCTION_ARGS)
     PG_RETURN_FLOAT8(ArrayXiSimpsonGlobal(a1,a2));
 }
 
-// RETURNS THE INTERSECTION BETWEEN BOTH ARRAYS
+//
+PG_FUNCTION_INFO_V1(arrayxi_tanimoto);
+Datum arrayxi_tanimoto(PG_FUNCTION_ARGS)
+{
+    ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
+    ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
+
+    PG_RETURN_FLOAT8(ArrayXiTanimoto(a1,a2));
+}
+
+//
 PG_FUNCTION_INFO_V1(arrayxi_tversky);
 Datum arrayxi_tversky(PG_FUNCTION_ARGS)
 {
@@ -374,7 +384,7 @@ Datum arrayxi_tversky(PG_FUNCTION_ARGS)
     PG_RETURN_FLOAT8(ArrayXiTversky(a1,a2));
 }
 
-// RETURNS THE INTERSECTION BETWEEN BOTH ARRAYS
+//
 PG_FUNCTION_INFO_V1(arrayxi_fuzcavsim_global);
 Datum arrayxi_fuzcavsim_global(PG_FUNCTION_ARGS)
 {
@@ -384,11 +394,42 @@ Datum arrayxi_fuzcavsim_global(PG_FUNCTION_ARGS)
     PG_RETURN_FLOAT8(ArrayXiFuzCavSimGlobal(a1,a2));
 }
 
+///////////////// QUANTITATIVE / NON-BINARY METRICS /////////////
+//
+PG_FUNCTION_INFO_V1(arrayxi_tanimoto_nb);
+Datum arrayxi_tanimoto_nb(PG_FUNCTION_ARGS)
+{
+    ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
+    ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
+
+    PG_RETURN_FLOAT8(ArrayXiTanimotoNB(a1,a2));
+}
+
+//
+PG_FUNCTION_INFO_V1(arrayxi_dice_nb);
+Datum arrayxi_dice_nb(PG_FUNCTION_ARGS)
+{
+    ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
+    ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
+
+    PG_RETURN_FLOAT8(ArrayXiDiceNB(a1,a2));
+}
+
+//
+PG_FUNCTION_INFO_V1(arrayxi_cosine_nb);
+Datum arrayxi_cosine_nb(PG_FUNCTION_ARGS)
+{
+    ArrayType  *a1 = PG_GETARG_ARRAYTYPE_P(0);
+    ArrayType  *a2 = PG_GETARG_ARRAYTYPE_P(1);
+
+    PG_RETURN_FLOAT8(ArrayXiCosineNB(a1,a2));
+}
+
 
 //////////////////////////NORMAL DISTANCE METRICS///////////////////////////////
 
 
-// RETURNS THE BRAY-CURTIS DISSIMILARITY
+// RETURNS THE DICE DISSIMILARITY
 PG_FUNCTION_INFO_V1(arrayxi_dice_dist);
 Datum arrayxi_dice_dist(PG_FUNCTION_ARGS)
 {
@@ -491,6 +532,7 @@ float4 arrayxi_manhattan_limit   = 0.9f;
 float4 arrayxi_ochiai_limit      = 0.7f;
 float4 arrayxi_russell_rao_limit = 0.5f;
 float4 arrayxi_simpson_limit     = 0.16f;
+float4 arrayxi_tanimoto_limit    = 0.6f;
 float4 arrayxi_tversky_limit     = 0.5f;
 float4 arrayxi_tversky_alpha     = 1.0f;
 float4 arrayxi_tversky_beta      = 1.0f;
@@ -509,6 +551,8 @@ Datum show_arrayxi_similarity_limit(PG_FUNCTION_ARGS)
     else if (strcmp(metric, "ochiai") == 0) limit = arrayxi_ochiai_limit;
     else if (strcmp(metric, "rusell-rao") == 0) limit = arrayxi_russell_rao_limit;
     else if (strcmp(metric, "simpson") == 0) limit = arrayxi_simpson_limit;
+    else if (strcmp(metric, "tanimoto") == 0) limit = arrayxi_tanimoto_limit;
+    else if (strcmp(metric, "tversky") == 0) limit = arrayxi_tversky_limit;
     else if (strcmp(metric, "tversky_alpha") == 0) limit = arrayxi_tversky_alpha;
     else if (strcmp(metric, "tversky_beta") == 0) limit = arrayxi_tversky_beta;
 
@@ -519,6 +563,8 @@ Datum show_arrayxi_similarity_limit(PG_FUNCTION_ARGS)
                      errmsg("unknown similarity metric or parameter: \"%s\"", metric))
                 );
     }
+    
+    elog(INFO, "Current %s limit: %f", metric, limit);
 
     PG_RETURN_FLOAT4(limit);
 }
@@ -545,6 +591,8 @@ Datum set_arrayxi_similarity_limit(PG_FUNCTION_ARGS)
     else if (strcmp(metric, "ochiai") == 0) arrayxi_ochiai_limit = limit;
     else if (strcmp(metric, "rusell-rao") == 0) arrayxi_russell_rao_limit = limit;
     else if (strcmp(metric, "simpson") == 0) arrayxi_simpson_limit = limit;
+    else if (strcmp(metric, "tanimoto") == 0) arrayxi_tanimoto_limit = limit;
+    else if (strcmp(metric, "tversky") == 0) arrayxi_tversky_limit = limit;
     else if (strcmp(metric, "tversky_alpha") == 0) arrayxi_tversky_alpha = limit;
     else if (strcmp(metric, "tversky_beta") == 0) arrayxi_tversky_beta = limit;
 
@@ -552,9 +600,11 @@ Datum set_arrayxi_similarity_limit(PG_FUNCTION_ARGS)
     {
         ereport(ERROR,
                     (errcode(ERRCODE_DATA_EXCEPTION),
-                     errmsg("unkknown similarity metric or parameter: \"%s\"", metric))
+                     errmsg("unknown similarity metric or parameter: \"%s\"", metric))
                 );
     }
+    
+    elog(INFO, "Post setting limit: %f", limit);
 
     PG_RETURN_FLOAT4(limit);
  }
@@ -631,6 +681,16 @@ Datum arrayxi_simpson_is_above_limit(PG_FUNCTION_ARGS)
     ArrayType *a2 = PG_GETARG_ARRAYTYPE_P(1);
     
     PG_RETURN_BOOL(ArrayXiSimpson(a1,a2) >= arrayxi_simpson_limit);
+}
+
+//
+PG_FUNCTION_INFO_V1(arrayxi_tanimoto_is_above_limit);
+Datum arrayxi_tanimoto_is_above_limit(PG_FUNCTION_ARGS)
+{
+    ArrayType *a1 = PG_GETARG_ARRAYTYPE_P(0);
+    ArrayType *a2 = PG_GETARG_ARRAYTYPE_P(1);
+    
+    PG_RETURN_BOOL(ArrayXiTversky(a1,a2) >= arrayxi_tanimoto_limit);
 }
 
 // 
