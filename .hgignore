@@ -1,0 +1,6 @@
+syntax: glob
+
+*.kdev4
+*.o
+*.so
+docs/_*
